@@ -95,7 +95,7 @@ const EDG=[[0,1],[0,2],[1,3],[2,3],[3,4],[3,5],[4,6],[5,6]]; // ветки ка�
 const NOD=[[9,50],[28,24],[28,76],[48,50],[68,26],[68,74],[88,50]]; // позиции узлов, %
 const hats=["кринж","фу","ноль","уйди","лол","скуф","цирк"];
 const say=["куда ты, ссыкло?","не суйся","иди в стрим","ты тут не свой","беги, клоун","слышь, отвали"]; // фразы, когда Валя пробегает мимо
-let P,coins,foes,state,cam,camY,score,t=0,pops;
+let P,coins,foes,state,cam,camY,score,t=0,pops,shots;
 let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[0,0,0,0,0,0,0];
 const mapEl=document.getElementById('map'),pathEl=document.getElementById('path');
 try{const d=localStorage.getItem('hori_done'),u=+localStorage.getItem('hori_unlocked');
@@ -119,11 +119,14 @@ function toMap(){
 function reset(i){
  li=i;L=LV[i];W=L.w;GY=L.gy;LH=L.h;
  P={x:60,y:L.sp?L.sp[1]:GY-44,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3,jp:0,lnd:0,kills:0};
- coins=[];foes=[];pops=[];score=0;state='play';cam=0;camY=0;shake=0;mapEl.style.display='none';document.body.classList.remove('menu');snd('start');
+ coins=[];foes=[];pops=[];shots=[];score=0;state='play';cam=0;camY=0;shake=0;mapEl.style.display='none';document.body.classList.remove('menu');snd('start');
  L.p.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
- L.f.forEach((f,i)=>foes.push({x:f[0],y:f[1],w:30,h:34,vx:f[3],d:i%2?1:-1,x0:f[0]-f[2],x1:f[0]+f[2],tx:hats[i%7],sh:-600}));
+ const kd=Math.min(3,li>>1); // тип хейтера растёт с уровнем: 0 нуль, 1 стрелок, 2 залповый, 3 босс
+ L.f.forEach((f,i)=>foes.push({x:f[0],y:f[1],w:30,h:34,vx:f[3]*(1+kd*.3),d:i%2?1:-1,x0:f[0]-f[2],x1:f[0]+f[2],tx:hats[i%7],sh:-600,k:kd,hp:1+(kd>1)+(kd>2),sr:t+40+(i*37)%90}));
 }
 function pop(x,y,s,c){pops.push({x,y,s,c,l:50})}
+function hurt(){P.hp--;P.inv=70;P.vy=-7;snd('hurt');if(P.hp<=0){state='lose';snd('lose')}}
+function shoot(e,a){shots.push({x:e.x+15,y:e.y+6,vx:Math.cos(a)*4.4,vy:Math.sin(a)*4.4,s:say[Math.random()*say.length|0],l:170})} // хейтерская фраза как снаряд
 function solid(o,py){ // one-way landing
  o.on=0;
  for(const p of L.p){
@@ -143,14 +146,22 @@ if((keys.KeyX||keys.KeyJ)&&P.atk<=0){P.atk=18;snd('swing')}
  if(P.vx&&P.on&&Math.random()<.15)pops.push({x:P.x+3,y:P.y+42,s:'',c:'#e8dcff',l:22,d:1});
  // sword hitbox
  const hb=P.atk>0?{x:P.f>0?P.x+P.w:P.x-50,y:P.y-4,w:50,h:P.h}:null;
+const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
  for(const e of foes){
-  if(e.dead)continue;
-  e.x+=e.vx*e.d;if(e.x<e.x0)e.d=1;if(e.x>e.x1)e.d=-1;
-  const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
-if(hb&&hit(hb,e)){e.dead=1;const v=[50,100,150,200][Math.random()*4|0];score+=v;pop(e.x,e.y+24,'+'+v+'₽','#ffd54a');P.kills++;pops.push({x:e.x+15,y:e.y-18,s:P.kills%3?'В БАН':'В БАН НАХ**',st:1,rot:(Math.random()-.5)*.5,l:52});shake=5;snd('kill');continue}
-if(P.inv<=0&&hit(P,e)){P.hp--;P.inv=70;P.vy=-7;P.x-=e.d*30;pops.push({x:P.x+12,y:P.y-12,s:e.tx+'!',st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.4,l:44});snd('hurt');if(P.hp<=0){state='lose';snd('lose')}}
+   if(e.dead)continue;
+   e.x+=e.vx*e.d;if(e.x<e.x0)e.d=1;if(e.x>e.x1)e.d=-1;
+   if(e.k&&t>e.sr&&Math.abs(P.x-e.x)<430&&Math.abs(P.y-e.y)<170){ // залп фразами
+    e.sr=t+(e.k>2?70:120)+Math.random()*40|0;const a=Math.atan2(P.y+22-e.y-6,P.x+12-e.x),n=e.k>2?5:e.k>1?3:1;
+    for(let i=0;i<n;i++)shoot(e,a+(i-(n-1)/2)*.16);snd('swing')}
+if(hb&&hit(hb,e)){if(--e.hp>0){snd('swing');continue}e.dead=1;const v=[50,100,150,200][Math.random()*4|0];score+=v;pop(e.x,e.y+24,'+'+v+' ₽','#ffd54a');P.kills++;pops.push({x:e.x+15,y:e.y-18,s:P.kills%3?'В БАН':'В БАН НАХ**',st:1,rot:(Math.random()-.5)*.5,l:52});shake=5;snd('kill');continue}
+if(P.inv<=0&&hit(P,e)){P.x-=e.d*30;pops.push({x:P.x+12,y:P.y-12,s:e.tx+'!',st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.4,l:44});hurt()}
 else if(Math.abs(P.x-e.x)<95&&Math.abs(P.y-e.y)<58&&t-e.sh>600){e.sh=t;pops.push({x:e.x,y:e.y-26,s:say[Math.random()*say.length|0],st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.3,l:90})}
  }
+ for(const s of shots){ // фразы летят, их можно отбить мечом
+  s.x+=s.vx;s.y+=s.vy;s.l--;
+  if(hb&&hit(hb,{x:s.x-30,y:s.y-11,w:60,h:22})){s.l=0;score+=10;pop(s.x,s.y,'+10 ₽','#ffd54a');snd('coin')}
+  else if(P.inv<=0&&Math.abs(s.x-P.x-12)<36&&Math.abs(s.y-P.y-22)<22){s.l=0;P.x-=Math.sign(s.vx)*20;hurt();pops.push({x:s.x,y:s.y,s:s.s,st:1,c:'#ff5c8a',rot:(Math.random()-.5)*.3,l:40})}}
+ shots=shots.filter(s=>s.l>0);
  for(const c of coins){if(!c.g&&Math.abs(c.x-(P.x+12))<22&&Math.abs(c.y-(P.y+22))<32){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a');snd('coin')}}
  pops.forEach(p=>{p.y-=.8;p.l--});pops=pops.filter(p=>p.l>0);
  shake*=.8;
@@ -195,14 +206,18 @@ function girl(){
  if(P.atk>10){g.strokeStyle='#ffffff88';g.lineWidth=3;g.beginPath();g.arc(x+12,y+22,42,f>0?-1.2:Math.PI-.8,f>0?.8:Math.PI+1.2);g.stroke()}
 }
 function hater(e){
- g.save();g.translate(e.x,e.y);
- rr(0,6,30,28,8,'#c0392b');rr(3,0,24,14,6,'#e74c3c');
- g.fillStyle='#fff';g.fillRect(7,8,6,5);g.fillRect(17,8,6,5);
- g.fillStyle='#000';g.fillRect(9,10,3,3);g.fillRect(18,10,3,3);
- g.strokeStyle='#000';g.lineWidth=2;g.beginPath();g.moveTo(6,6);g.lineTo(14,9);g.moveTo(24,6);g.lineTo(16,9);g.stroke();
- g.fillStyle='#000';g.fillRect(10,22,10,3);
- g.save();g.translate(15,-7);g.rotate(-.1);g.font='bold 11px system-ui';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#1c1526';g.strokeText(e.tx,0,0);g.fillStyle='#5ce1e6';g.fillText(e.tx,0,0);g.restore();
- g.restore();
+  const k=e.k,c=['#c0392b','#d35400','#8e44ad','#141420'][k],lc=['#5ce1e6','#ffd54a','#c39bd3','#ff5c8a'][k];
+  g.save();g.translate(e.x,e.y);
+  if(k>2){g.fillStyle='#ffd54a';g.beginPath();g.moveTo(3,3);g.lineTo(8,-7);g.lineTo(13,3);g.lineTo(18,-7);g.lineTo(23,3);g.lineTo(28,-7);g.lineTo(33,3);g.closePath();g.fill()} // корона босса
+  rr(0,6,30,28,8,c);rr(3,0,24,14,6,k?'#2c1e3f':'#e74c3c');
+  if(k>1){g.fillStyle='#ffd54a';g.beginPath();g.moveTo(2,11);g.lineTo(-5,2);g.lineTo(2,5);g.fill();g.beginPath();g.moveTo(28,11);g.lineTo(35,2);g.lineTo(28,5);g.fill()} // шипы
+  g.fillStyle='#fff';g.fillRect(7,8,6,5);g.fillRect(17,8,6,5);
+  g.fillStyle='#000';g.fillRect(9,10,3,3);g.fillRect(18,10,3,3);
+  g.strokeStyle='#000';g.lineWidth=2;g.beginPath();g.moveTo(6,6);g.lineTo(14,9);g.moveTo(24,6);g.lineTo(16,9);g.stroke();
+  g.fillStyle='#000';g.fillRect(10,22,10,3);
+  if(e.hp>1){g.fillStyle='#ff5c8a';for(let i=0;i<e.hp;i++)g.fillRect(5+i*8,-11,6,4)} // деления жизни
+  g.save();g.translate(15,-7);g.rotate(-.1);g.font='bold 11px system-ui';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#1c1526';g.strokeText(e.tx,0,0);g.fillStyle=lc;g.fillText(e.tx,0,0);g.restore();
+  g.restore();
 }
 function draw(){
  g.clearRect(0,0,800,450);
@@ -212,8 +227,9 @@ g.save();g.translate(-cam+(shake?(Math.random()-.5)*shake:0),-camY+(shake?(Math.
  for(const p of L.p){rr(p[0],p[1],p[2],p[3],4,p[1]==GY?'#2d1f4d':'#7b5ea7');if(p[1]!=GY)g.fillStyle='#b993e8',g.fillRect(p[0],p[1],p[2],3)}
  g.fillStyle='#4a3775';g.fillRect(0,GY,W,4);
  for(const c of coins){if(c.g)continue;const y=c.y+Math.sin(t*.08+c.x)*3;g.fillStyle='#ffd54a';g.beginPath();g.arc(c.x,y,10,0,7);g.fill();g.fillStyle='#a67c00';g.font='bold 12px system-ui';g.textAlign='center';g.fillText('₽',c.x,y+4)}
- foes.forEach(e=>{if(!e.dead)hater(e)});
- girl();
+foes.forEach(e=>{if(!e.dead)hater(e)});
+  girl();
+  shots.forEach(s=>{g.save();g.translate(s.x,s.y);g.rotate(Math.sin(t*.12+s.x*.05)*.12);g.font='bold 13px system-ui';g.textAlign='center';g.lineWidth=4;g.strokeStyle='#1c1526';g.strokeText(s.s,0,0);g.fillStyle=s.g?'#ffd54a':'#ffb3c7';g.fillText(s.s,0,0);g.restore()}); // фразы в полёте
  g.font='bold 14px system-ui';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#000a';g.strokeText('Валя',P.x+12,P.y-12);g.fillStyle='#fff';g.fillText('Валя',P.x+12,P.y-12);
  g.fillStyle='#fff';g.fillRect(L.fin[0],L.fin[1]-80,4,80);g.fillStyle='#ff5c8a';g.fillRect(L.fin[0]+4,L.fin[1]-80,34,22);
    pops.forEach(p=>{if(p.d){g.globalAlpha=p.l/22;g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,2+(22-p.l)/5,0,7);g.fill();g.globalAlpha=1;return}
