@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Стрим-платформер</title>
+<style>
+:root{--bg:#1a1326;--fg:#f3e9ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg)}
+canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#2b1d45;border-radius:10px}
+#pad{display:flex;justify-content:space-between;width:100%;max-width:900px;padding:10px 12px;box-sizing:border-box}
+#pad div{display:flex;gap:10px}
+#pad button{width:64px;height:64px;font-size:26px;border:0;border-radius:50%;background:#ffffff26;color:var(--fg)}
+#pad button:active{background:#ffffff55}
+small{opacity:.6;margin-top:4px}
+</style></head><body>
+<canvas id="c" width="800" height="450"></canvas>
+<div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyX">⚔</button><button data-k="Space">⤒</button></div></div>
+<small>← → ходить · Пробел/↑ прыжок · X удар · Enter рестарт</small>
+<script>
+const cv=document.getElementById('c'),g=cv.getContext('2d'),W=3200,GY=390;
+const keys={};
+addEventListener('keydown',e=>{keys[e.code]=1;if(e.code=='Space'||e.code.startsWith('Arrow'))e.preventDefault()});
+addEventListener('keyup',e=>keys[e.code]=0);
+document.querySelectorAll('#pad button').forEach(b=>{
+ const k=b.dataset.k;
+ b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=1});
+ ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>keys[k]=0));
+});
+cv.addEventListener('pointerdown',()=>{if(state!='play')reset()});
+const plats=[[0,GY,W,60],[300,320,120,14],[520,270,140,14],[760,330,110,14],[980,260,150,14],[1220,320,120,14],[1420,250,130,14],[1650,300,120,14],[1880,240,150,14],[2120,310,120,14],[2350,250,140,14],[2600,300,130,14],[2830,240,140,14]];
+const hats=["кринж","фу","ноль","уйди","лол"];
+let P,coins,foes,state,cam,score,t=0,pops;
+function reset(){
+ P={x:60,y:300,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3};
+ coins=[];foes=[];pops=[];score=0;state='play';cam=0;
+ plats.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
+ [500,900,1200,1550,1800,2050,2300,2550,2800,3000].forEach((x,i)=>foes.push({x,y:GY-34,w:30,h:34,vx:1+(i%3)*.4,d:-1,x0:x-90,x1:x+90,tx:hats[i%5]}));
+ [[520,270,140],[980,260,150],[1420,250,130],[1880,240,150],[2350,250,140]].forEach((p,i)=>foes.push({x:p[0]+40,y:p[1]-34,w:30,h:34,vx:1,d:1,x0:p[0],x1:p[0]+p[2]-30,tx:hats[(i+2)%5]}));
+}
+function pop(x,y,s,c){pops.push({x,y,s,c,l:50})}
+function solid(o,py){ // one-way landing
+ o.on=0;
+ for(const p of plats){
+  if(o.x+o.w>p[0]&&o.x<p[0]+p[2]&&o.vy>=0&&py+o.h<=p[1]+2&&o.y+o.h>=p[1]){o.y=p[1]-o.h;o.vy=0;o.on=1}
+ }
+}
+function update(){
+ t++;
+ if(state!='play'){if(keys.Enter)reset();return}
+ const l=keys.ArrowLeft||keys.KeyA,r=keys.ArrowRight||keys.KeyD;
+ P.vx=(r?1:0)*4-(l?1:0)*4;if(P.vx)P.f=P.vx>0?1:-1;
+ if((keys.Space||keys.ArrowUp||keys.KeyW)&&P.on){P.vy=-12.5;P.on=0}
+ if((keys.KeyX||keys.KeyJ)&&P.atk<=0)P.atk=18;
+ P.atk--;P.inv--;
+ P.x=Math.max(0,Math.min(W-P.w,P.x+P.vx));
+ const py=P.y;P.vy+=.65;P.y+=P.vy;solid(P,py);
+ // sword hitbox
+ const hb=P.atk>0?{x:P.f>0?P.x+P.w:P.x-50,y:P.y-4,w:50,h:P.h}:null;
+ for(const e of foes){
+  if(e.dead)continue;
+  e.x+=e.vx*e.d;if(e.x<e.x0)e.d=1;if(e.x>e.x1)e.d=-1;
+  const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+  if(hb&&hit(hb,e)){e.dead=1;const v=[50,100,150,200][Math.random()*4|0];score+=v;pop(e.x,e.y,'+'+v+'₽','#ffd54a');continue}
+  if(P.inv<=0&&hit(P,e)){P.hp--;P.inv=70;P.vy=-7;P.x-=e.d*30;pop(P.x,P.y-10,e.tx+'!','#ff6b81');if(P.hp<=0)state='lose'}
+ }
+ for(const c of coins){if(!c.g&&Math.abs(c.x-(P.x+12))<22&&Math.abs(c.y-(P.y+22))<32){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a')}}
+ pops.forEach(p=>{p.y-=.8;p.l--});pops=pops.filter(p=>p.l>0);
+ if(P.x>W-90)state='win';
+ cam=Math.max(0,Math.min(W-800,P.x-300));
+}
+function rr(x,y,w,h,r,c){g.fillStyle=c;g.beginPath();g.roundRect(x,y,w,h,r);g.fill()}
+function girl(){
+ const x=P.x,y=P.y,f=P.f;
+ if(P.inv>0&&(t>>2)%2)return;
+ const w=Math.sin(t*.35)*(P.vx&&P.on?4:0),S='#f2c6a0',K='#1c1526';
+ // ноги: бедро кожа, гольфы тёмные
+ [[x+7+w*.3],[x+13-w*.3]].forEach(l=>{const lx=l[0];
+  rr(lx,y+30,5,8,2,S);rr(lx-.5,y+35,6,10,2,K);g.fillStyle='#4a3a63';g.fillRect(lx-.5,y+35,6,2);
+  rr(lx-1,y+43,7,3,1,'#111')});
+ rr(x+6,y+25,12,8,3,'#3b6fd8'); // шорты
+ rr(x+6,y+12,12,15,4,'#161616'); // чёрная футболка
+ g.fillStyle='#ff5c8a';g.font='bold 9px system-ui';g.textAlign='center';g.fillText('♥',x+12,y+22);
+ g.fillStyle='#fff';g.fillRect(x+9,y+24,6,1);
+ // руки-рукава (тату)
+ [x+2,x+18].forEach(ax=>{rr(ax,y+13,4,13,2,S);rr(ax,y+13,4,13,2,'#243b55');
+  g.fillStyle='#8fc1e8';g.fillRect(ax+1,y+15,1,2);g.fillRect(ax+2,y+19,1,2);g.fillRect(ax+1,y+23,1,1);
+  g.fillStyle='#e0577a';g.fillRect(ax+2,y+16,1,1);g.fillRect(ax+1,y+21,1,1)});
+ g.fillStyle=S;g.fillRect(x+10,y+9,4,4); // шея
+ rr(x+4,y-1,16,19,7,'#0e0e14'); // волосы каре
+ g.fillStyle=S;g.beginPath();g.arc(x+12,y+8,6.5,0,7);g.fill();
+ g.fillStyle='#0e0e14';g.beginPath();g.arc(x+12,y+5,7.5,Math.PI,0);g.fill();
+ g.fillRect(x+(f>0?12:4),y+3,8,4);
+ g.fillStyle='#222';g.fillRect(x+12+f*2,y+8,2,3);g.fillRect(x+12+f*5-(f>0?0:2),y+8,2,3);
+ // меч
+ g.save();g.translate(x+12+f*8,y+22);
+ const a=P.atk>0?(-1.4+(18-P.atk)/18*2.6)*f:1.3*f;g.rotate(a);
+ g.fillStyle='#8a5a2b';g.fillRect(-2,-4,4,8);g.fillStyle='#ffd54a';g.fillRect(-6,-6,12,3);
+ g.fillStyle='#dfe9ff';g.fillRect(-2,-40,4,34);g.restore();
+ if(P.atk>10){g.strokeStyle='#ffffff88';g.lineWidth=3;g.beginPath();g.arc(x+12,y+22,42,f>0?-1.2:Math.PI-.8,f>0?.8:Math.PI+1.2);g.stroke()}
+}
+function hater(e){
+ g.save();g.translate(e.x,e.y);
+ rr(0,6,30,28,8,'#c0392b');rr(3,0,24,14,6,'#e74c3c');
+ g.fillStyle='#fff';g.fillRect(7,8,6,5);g.fillRect(17,8,6,5);
+ g.fillStyle='#000';g.fillRect(9,10,3,3);g.fillRect(18,10,3,3);
+ g.strokeStyle='#000';g.lineWidth=2;g.beginPath();g.moveTo(6,6);g.lineTo(14,9);g.moveTo(24,6);g.lineTo(16,9);g.stroke();
+ g.fillStyle='#000';g.fillRect(10,22,10,3);
+ g.fillStyle='#ffffffcc';g.font='11px system-ui';g.textAlign='center';g.fillText(e.tx,15,-6);
+ g.restore();
+}
+function draw(){
+ g.clearRect(0,0,800,450);
+ const s=g.createLinearGradient(0,0,0,450);s.addColorStop(0,'#3a2466');s.addColorStop(1,'#a04b8f');g.fillStyle=s;g.fillRect(0,0,800,450);
+ g.save();g.translate(-cam,0);
+ g.fillStyle='#ffffff22';for(let i=0;i<40;i++)g.fillRect(i*83%W,30+i*37%180,2,2);
+ for(const p of plats){rr(p[0],p[1],p[2],p[3],4,p[1]==GY?'#2d1f4d':'#7b5ea7');if(p[1]!=GY)g.fillStyle='#b993e8',g.fillRect(p[0],p[1],p[2],3)}
+ g.fillStyle='#4a3775';g.fillRect(0,GY,W,4);
+ for(const c of coins){if(c.g)continue;const y=c.y+Math.sin(t*.08+c.x)*3;g.fillStyle='#ffd54a';g.beginPath();g.arc(c.x,y,10,0,7);g.fill();g.fillStyle='#a67c00';g.font='bold 12px system-ui';g.textAlign='center';g.fillText('₽',c.x,y+4)}
+ foes.forEach(e=>{if(!e.dead)hater(e)});
+ girl();
+ g.font='bold 14px system-ui';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#000a';g.strokeText('Валя',P.x+12,P.y-12);g.fillStyle='#fff';g.fillText('Валя',P.x+12,P.y-12);
+ g.fillStyle='#fff';g.fillRect(W-70,GY-80,4,80);g.fillStyle='#ff5c8a';g.fillRect(W-66,GY-80,34,22);
+ pops.forEach(p=>{g.globalAlpha=p.l/50;g.fillStyle=p.c;g.font='bold 15px system-ui';g.textAlign='center';g.fillText(p.s,p.x,p.y);g.globalAlpha=1});
+ g.restore();
+ g.fillStyle='#fff';g.font='bold 18px system-ui';g.textAlign='left';
+ g.fillText('❤'.repeat(Math.max(P.hp,0)),16,28);
+ g.textAlign='right';g.fillStyle='#ffd54a';g.fillText('Донаты: '+score+' ₽',784,28);
+ if(state!='play'){
+  g.fillStyle='#000a';g.fillRect(0,0,800,450);g.fillStyle='#fff';g.textAlign='center';
+  g.font='bold 34px system-ui';g.fillText(state=='win'?'Стрим окончен!':'Хейтеры победили',400,200);
+  g.font='20px system-ui';g.fillStyle='#ffd54a';g.fillText('Собрано донатов: '+score+' ₽',400,240);
+  g.fillStyle='#fff';g.fillText('Enter или тап — заново',400,280);
+ }
+}
+reset();
+(function loop(){update();draw();requestAnimationFrame(loop)})();
+</script></body></html>
