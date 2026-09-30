@@ -15,11 +15,11 @@ small{opacity:.6;margin-top:4px}
 </style></head><body>
 <canvas id="c" width="800" height="450"></canvas>
 <div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyX">⚔</button><button data-k="Space">⤒</button></div></div>
-<small>← → ходить · Пробел/↑ прыжок · X удар · Enter рестарт</small>
+<small>← → ходить · Пробел/↑ прыжок · X удар · Enter рестарт · M звук</small>
 <script>
 const cv=document.getElementById('c'),g=cv.getContext('2d'),W=3200,GY=390;
 const keys={};
-addEventListener('keydown',e=>{keys[e.code]=1;if(e.code=='Space'||e.code.startsWith('Arrow'))e.preventDefault()});
+addEventListener('keydown',e=>{keys[e.code]=1;if(e.code=='KeyM'&&!e.repeat)MUTE=!MUTE;audio();if(e.code=='Space'||e.code.startsWith('Arrow'))e.preventDefault()});
 addEventListener('keyup',e=>keys[e.code]=0);
 document.querySelectorAll('#pad button').forEach(b=>{
  const k=b.dataset.k;
@@ -27,12 +27,35 @@ document.querySelectorAll('#pad button').forEach(b=>{
  ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>keys[k]=0));
 });
 cv.addEventListener('pointerdown',()=>{if(state!='play')reset()});
+// --- звук: синтез, без файлов. До-мажорная пентатоника, мягкая атака 12мс
+let AC,MASTER,MUTE=0;
+function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)}catch(e){return}
+ MASTER=AC.createGain();MASTER.gain.value=.16;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=6000;MASTER.connect(lp);lp.connect(AC.destination)}
+function n(f,d,g,type,delay,glide){if(!AC||MUTE)return;const a=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime+(delay||0);
+ a.type=type||'sine';a.frequency.setValueAtTime(f,t);if(glide)a.frequency.exponentialRampToValueAtTime(f*glide,t+d);
+ v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g,t+.012);v.gain.exponentialRampToValueAtTime(.0001,t+d);
+ a.connect(v);v.connect(MASTER);a.start(t);a.stop(t+d+.03)}
+function swish(){if(!AC||MUTE)return;const L=AC.sampleRate*.13,b=AC.createBuffer(1,L,AC.sampleRate),d=b.getChannelData(0);
+ for(let i=0;i<L;i++)d[i]=(Math.random()*2-1)*(1-i/L)*(1-i/L);
+ const s=AC.createBufferSource(),f=AC.createBiquadFilter(),v=AC.createGain(),t=AC.currentTime;
+ s.buffer=b;f.type='bandpass';f.Q.value=1.2;f.frequency.setValueAtTime(2800,t);f.frequency.exponentialRampToValueAtTime(650,t+.13);
+ v.gain.value=.45;s.connect(f);f.connect(v);v.connect(MASTER);s.start(t)}
+function snd(k){if(!AC||MUTE)return;
+ if(k=='jump')n(587,.22,.5,'triangle',0,1.5);
+ else if(k=='swing')swish();
+ else if(k=='kill'){n(784,.12,.45,'triangle');n(1175,.26,.35,'sine',.06)}
+ else if(k=='coin'){n(1047,.1,.3,'sine');n(1568,.2,.28,'sine',.05)}
+ else if(k=='hurt')n(196,.3,.5,'sawtooth',0,.5);
+ else if(k=='win'){[523,659,784,1047].forEach((f,i)=>n(f,.55,.3,'triangle',i*.09));n(2093,.75,.12,'sine',.36)}
+ else if(k=='lose'){[392,370,330,247].forEach((f,i)=>n(f,.6,.28,'triangle',i*.14))}
+ else if(k=='start'){[523,784].forEach((f,i)=>n(f,.4,.22,'sine',i*.08))}}
+addEventListener('pointerdown',()=>{audio();if(AC&&AC.state=='suspended')AC.resume()});
 const plats=[[0,GY,W,60],[300,320,120,14],[520,270,140,14],[760,330,110,14],[980,260,150,14],[1220,320,120,14],[1420,250,130,14],[1650,300,120,14],[1880,240,150,14],[2120,310,120,14],[2350,250,140,14],[2600,300,130,14],[2830,240,140,14]];
 const hats=["кринж","фу","ноль","уйди","лол"];
 let P,coins,foes,state,cam,score,t=0,pops;
 function reset(){
  P={x:60,y:300,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3};
- coins=[];foes=[];pops=[];score=0;state='play';cam=0;
+ coins=[];foes=[];pops=[];score=0;state='play';cam=0;snd('start');
  plats.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
  [500,900,1200,1550,1800,2050,2300,2550,2800,3000].forEach((x,i)=>foes.push({x,y:GY-34,w:30,h:34,vx:1+(i%3)*.4,d:-1,x0:x-90,x1:x+90,tx:hats[i%5]}));
  [[520,270,140],[980,260,150],[1420,250,130],[1880,240,150],[2350,250,140]].forEach((p,i)=>foes.push({x:p[0]+40,y:p[1]-34,w:30,h:34,vx:1,d:1,x0:p[0],x1:p[0]+p[2]-30,tx:hats[(i+2)%5]}));
@@ -49,8 +72,8 @@ function update(){
  if(state!='play'){if(keys.Enter)reset();return}
  const l=keys.ArrowLeft||keys.KeyA,r=keys.ArrowRight||keys.KeyD;
  P.vx=(r?1:0)*4-(l?1:0)*4;if(P.vx)P.f=P.vx>0?1:-1;
- if((keys.Space||keys.ArrowUp||keys.KeyW)&&P.on){P.vy=-12.5;P.on=0}
- if((keys.KeyX||keys.KeyJ)&&P.atk<=0)P.atk=18;
+if((keys.Space||keys.ArrowUp||keys.KeyW)&&P.on){P.vy=-12.5;P.on=0;snd('jump')}
+if((keys.KeyX||keys.KeyJ)&&P.atk<=0){P.atk=18;snd('swing')}
  P.atk--;P.inv--;
  P.x=Math.max(0,Math.min(W-P.w,P.x+P.vx));
  const py=P.y;P.vy+=.65;P.y+=P.vy;solid(P,py);
@@ -60,12 +83,12 @@ function update(){
   if(e.dead)continue;
   e.x+=e.vx*e.d;if(e.x<e.x0)e.d=1;if(e.x>e.x1)e.d=-1;
   const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
-  if(hb&&hit(hb,e)){e.dead=1;const v=[50,100,150,200][Math.random()*4|0];score+=v;pop(e.x,e.y,'+'+v+'₽','#ffd54a');continue}
-  if(P.inv<=0&&hit(P,e)){P.hp--;P.inv=70;P.vy=-7;P.x-=e.d*30;pop(P.x,P.y-10,e.tx+'!','#ff6b81');if(P.hp<=0)state='lose'}
+if(hb&&hit(hb,e)){e.dead=1;const v=[50,100,150,200][Math.random()*4|0];score+=v;pop(e.x,e.y,'+'+v+'₽','#ffd54a');snd('kill');continue}
+if(P.inv<=0&&hit(P,e)){P.hp--;P.inv=70;P.vy=-7;P.x-=e.d*30;pop(P.x,P.y-10,e.tx+'!','#ff6b81');snd('hurt');if(P.hp<=0){state='lose';snd('lose')}}
  }
- for(const c of coins){if(!c.g&&Math.abs(c.x-(P.x+12))<22&&Math.abs(c.y-(P.y+22))<32){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a')}}
+ for(const c of coins){if(!c.g&&Math.abs(c.x-(P.x+12))<22&&Math.abs(c.y-(P.y+22))<32){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a');snd('coin')}}
  pops.forEach(p=>{p.y-=.8;p.l--});pops=pops.filter(p=>p.l>0);
- if(P.x>W-90)state='win';
+ if(P.x>W-90){state='win';snd('win')}
  cam=Math.max(0,Math.min(W-800,P.x-300));
 }
 function rr(x,y,w,h,r,c){g.fillStyle=c;g.beginPath();g.roundRect(x,y,w,h,r);g.fill()}
