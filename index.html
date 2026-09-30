@@ -235,5 +235,8 @@ function fss(){const on=!!document.fullscreenElement;fsb.textContent=on?'⤡':'�
 fsb.onclick=()=>{try{const r=document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}};
 addEventListener('fullscreenchange',fss);fss();
 toMap();
-(function loop(){update();if(state!='map')draw();requestAnimationFrame(loop)})();
+const ST=1000/60;let acc=0,lp=performance.now(); // физика фиксированным шагом 60Гц, картинка — на частоте экрана
+(function loop(n){requestAnimationFrame(loop);acc+=Math.min(n-lp,250);lp=n; // 250мс потолок: после возврата на вкладку не догоняем секунды
+ while(acc>=ST){update();acc-=ST}
+ if(state!='map')draw()})(lp);
 </script></body></html>
