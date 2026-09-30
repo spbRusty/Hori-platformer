@@ -31,7 +31,7 @@ body.menu #pad,body.menu small,body.menu canvas{visibility:hidden}
 <canvas id="c" width="800" height="450"></canvas>
 <div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyX">⚔</button><button data-k="Space">⤒</button></div></div>
 <small>← → ходить · Пробел/↑ прыжок · X удар · Esc карта · M звук</small>
-<div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок · X удар · M звук</p></div>
+<div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок · X удар · M звук</p><p id=совет>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p></div>
 <button id="fs" aria-label="Полный экран">⛶</button>
 <script>
 const cv=document.getElementById('c'),g=cv.getContext('2d');let GY=500,LH=560;
@@ -95,7 +95,7 @@ const EDG=[[0,1],[0,2],[1,3],[2,3],[3,4],[3,5],[4,6],[5,6]]; // ветки ка�
 const NOD=[[9,50],[28,24],[28,76],[48,50],[68,26],[68,74],[88,50]]; // позиции узлов, %
 const hats=["кринж","фу","ноль","уйди","лол","скуф","цирк"];
 const say=["куда ты, ссыкло?","не суйся","иди в стрим","ты тут не свой","беги, клоун","слышь, отвали"]; // фразы, когда Валя пробегает мимо
-let P,coins,foes,state,cam,camY,score,t=0,pops,shots;
+let P,coins,foes,state,cam,camY,score,t=0,pops,shots,hint=0,taught=0;
 let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[0,0,0,0,0,0,0],bank=0,lost=0,AG=1;
 const mapEl=document.getElementById('map'),pathEl=document.getElementById('path');
 try{const d=localStorage.getItem('hori_done'),u=+localStorage.getItem('hori_unlocked');
@@ -124,6 +124,7 @@ function reset(i){
  L.p.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
  const kd=Math.min(3,li>>1); // тип хейтера растёт с уровнем: 0 нуль, 1 стрелок, 2 залповый, 3 босс
  AG=1+Math.min(1,bank/1500); // чем богаче Валя, тем злее хейтеры: скорость и частота залпов
+ if(AG>=1.25&&!taught){taught=1;hint=260} // один раз за сессию объясняем правило прямо в игре
  L.f.forEach((f,i)=>foes.push({x:f[0],y:f[1],w:30,h:34,vx:f[3]*(1+kd*.3)*AG,d:i%2?1:-1,x0:f[0]-f[2],x1:f[0]+f[2],tx:hats[i%7],sh:-600,k:kd,hp:1+(kd>1)+(kd>2),sr:t+40+(i*37)%90}));
 }
 function pop(x,y,s,c){pops.push({x,y,s,c,l:50})}
@@ -138,6 +139,7 @@ function solid(o,py){ // one-way landing
 function update(){
  t++;
  if(state!='play'){if(keys.Enter){keys.Enter=0;toMap()}return}
+ if(hint>0)hint--;
  const l=keys.ArrowLeft||keys.KeyA,r=keys.ArrowRight||keys.KeyD;
  P.vx=(r?1:0)*4-(l?1:0)*4;if(P.vx)P.f=P.vx>0?1:-1;
 if((keys.Space||keys.ArrowUp||keys.KeyW)&&P.on){P.vy=-12.5;P.on=0;P.jp=20;snd('jump')}
@@ -242,7 +244,10 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
  g.fillStyle='#fff';g.font='bold 18px system-ui';g.textAlign='left';
  g.fillText('❤'.repeat(Math.max(P.hp,0)),16,28);
  g.textAlign='right';g.fillStyle='#ffd54a';g.fillText('Донаты: '+score+' ₽',784,28);
-  g.font='bold 14px system-ui';g.fillStyle=AG>1.3?'#ff5c8a':'#c39bd3';g.fillText('Банк '+bank+' ₽ · хейтеры ×'+AG.toFixed(2),784,48);
+  g.font='bold 14px system-ui';g.fillStyle=AG>1.3?'#ff5c8a':'#c39bd3';g.fillText('Банк '+bank+' ₽ → хейтеры ×'+AG.toFixed(2),784,48);
+ if(hint>0){g.globalAlpha=Math.min(1,hint/50);g.fillStyle='#000c';g.fillRect(0,84,800,46);
+  g.fillStyle='#ff5c8a';g.font='bold 21px system-ui';g.textAlign='center';g.fillText('ХЕЙТЕРЫ ЗЛЕЮТ С КАЖДОЙ МОНЕТОЙ',400,113);
+  g.fillStyle='#ffd54a';g.font='bold 15px system-ui';g.fillText(' смерть сожжёт половину банка — богатым быть опаснее',400,133);g.globalAlpha=1}
  if(state=='win'||state=='lose'){
   g.fillStyle='#000a';g.fillRect(0,0,800,450);g.fillStyle='#fff';g.textAlign='center';
   g.font='bold 34px system-ui';g.fillText(state=='win'?L.n+' — стрим окончен!':'Хейтеры победили',400,200);
