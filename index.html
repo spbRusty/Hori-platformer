@@ -7,6 +7,9 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none}
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg)}
 canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#2b1d45;border-radius:10px}
+#игр{width:100%;max-width:900px;display:flex;justify-content:center}
+#игр:fullscreen,#игр:-webkit-full-screen{width:100%;height:100%;max-width:none;background:#000}
+#игр:fullscreen canvas,#игр:-webkit-full-screen canvas{max-width:none;max-height:none;width:100%;height:100%;object-fit:contain;border-radius:0}
 #pad{display:flex;justify-content:space-between;width:100%;max-width:900px;padding:10px 12px;box-sizing:border-box}
 #pad div{display:flex;gap:10px}
 #pad button{width:64px;height:64px;font-size:26px;border:0;border-radius:50%;background:#ffffff26;color:var(--fg)}
@@ -26,13 +29,12 @@ small{opacity:.6;margin-top:4px}
 #path button:not([disabled]):active{background:#5a3a6e}
 #path button[disabled]{border-color:#4a3775;background:#1a1326;opacity:.4;cursor:not-allowed}
 #fs{position:fixed;top:8px;right:8px;z-index:10;width:46px;height:46px;border:1px solid #7b5ea7;border-radius:12px;background:#2b1d45cc;color:var(--fg);font-size:19px;cursor:pointer}
-body.menu #pad,body.menu small,body.menu canvas{visibility:hidden}
+body.menu #pad,body.menu small,body.menu canvas,body.menu #fs{visibility:hidden}
 </style></head><body>
-<canvas id="c" width="800" height="450"></canvas>
+<div id="игр"><canvas id="c" width="800" height="450"></canvas><button id="fs" aria-label="Полный экран">⛶</button></div>
 <div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyX">⚔</button><button data-k="Space">⤒</button></div></div>
 <small>← → ходить · Пробел/↑ прыжок · X удар · Esc карта · M звук</small>
 <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок · X удар · M звук</p><p id=совет>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p></div>
-<button id="fs" aria-label="Полный экран">⛶</button>
 <script>
 const cv=document.getElementById('c'),g=cv.getContext('2d');let GY=500,LH=560;
 const keys={};
@@ -105,7 +107,7 @@ try{const d=localStorage.getItem('hori_done'),u=+localStorage.getItem('hori_unlo
 function unl(i){return i==0||EDG.some(e=>e[1]==i&&done.indexOf(e[0])>=0)} // узел открыт, если пройден любой родитель
 function save(){try{localStorage.setItem('hori_done',done.join(','));localStorage.setItem('hori_best',best.join(','));localStorage.setItem('hori_bank',bank)}catch(e){}}
 function toMap(){
- state='map';document.body.classList.add('menu');mapEl.style.display='flex';pathEl.textContent='';
+ state='map';if(document.fullscreenElement)goFs(0,1);document.body.classList.add('menu');mapEl.style.display='flex';pathEl.textContent='';
  const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');
  sv.setAttribute('viewBox','0 0 100 100');sv.setAttribute('preserveAspectRatio','none');
  EDG.forEach(e=>{const l=document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -120,7 +122,7 @@ function toMap(){
 function reset(i){
  li=i;L=LV[i];W=L.w;GY=L.gy;LH=L.h;
  P={x:60,y:L.sp?L.sp[1]:GY-44,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3,jp:0,lnd:0,kills:0};
- coins=[];foes=[];pops=[];shots=[];score=0;state='play';cam=0;camY=0;shake=0;mapEl.style.display='none';document.body.classList.remove('menu');snd('start');
+ coins=[];foes=[];pops=[];shots=[];score=0;state='play';cam=0;camY=0;shake=0;mapEl.style.display='none';document.body.classList.remove('menu');if(wantFs&&!document.fullscreenElement)goFs(1);snd('start');
  L.p.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
  const kd=Math.min(3,li>>1); // тип хейтера растёт с уровнем: 0 нуль, 1 стрелок, 2 залповый, 3 босс
  AG=1+Math.min(1,bank/1500); // чем богаче Валя, тем злее хейтеры: скорость и частота залпов
@@ -256,9 +258,10 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
   g.fillStyle='#fff';g.fillText('Enter или тап — к карте',400,296);
  }
 }
-const fsb=document.getElementById('fs'); // полный экран
+const fsb=document.getElementById('fs'),wrap=document.getElementById('игр');let wantFs=0; // полный экран
 function fss(){const on=!!document.fullscreenElement;fsb.textContent=on?'⤡':'⛶';fsb.setAttribute('aria-label',on?'Выйти из полного экрана':'Полный экран')}
-fsb.onclick=()=>{try{const r=document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}};
+function goFs(on,keep){wantFs=on||keep?1:0;try{const r=on?wrap.requestFullscreen():document.exitFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+fsb.onclick=()=>goFs(!document.fullscreenElement);
 addEventListener('fullscreenchange',fss);fss();
 toMap();
 const ST=1000/60;let acc=0,lp=performance.now(); // физика фиксированным шагом 60Гц, картинка — на частоте экрана
