@@ -54,9 +54,9 @@ body.menu #pad,body.menu small,body.menu canvas,body.menu #fs,body.menu #гай�
 <div id="игр"><canvas id="c" width="800" height="450"></canvas>
   <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>X</b>меч</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span></div>
   <div id="гром"><i></i><i></i><i></i><i></i><i></i><s>−</s><s>+</s></div>
- <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок (можно дважды) · X удар · C щит · F полный экран · N музыка · ⇧N громкость · M звук</p><p id=совет>← → выбрать уровень · Enter начать</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты от фраз</p><p>В финале живёт 👑 Директор: пока он замахивается — неуязвим, бей после залпа. Сбей его — откроются врата стрима.</p></div>
+ <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок (можно дважды) · меч бьёт сам · C щит · F полный экран · N музыка · ⇧N громкость · M звук</p><p id=совет>← → выбрать уровень · Enter начать</p><p>Меч зажат всегда и бьёт только вперёд: за спиной Валя уязвима — разворачивайся.</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты от фраз</p><p>В финале живёт 👑 Директор: пока он замахивается — неуязвим, бей после залпа. Сбей его — откроются врата стрима.</p></div>
  <div id="кнопки"><button id="муз" aria-label="Музыка">♪</button><button id="fs" aria-label="Полный экран">⛶</button></div></div>
-<div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyX">⚔</button><button data-k="KeyC">🛡</button><button data-k="Space">⤒</button></div></div>
+<div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyC">🛡</button><button data-k="Space">⤒</button></div></div>
 <script>
 const cv=document.getElementById('c'),g=cv.getContext('2d');let GY=500,LH=560;
 const keys={},tap={}; // tap — залипание нажатия, иначе быстрый тап/Enter пролетает между шагами физики
@@ -104,16 +104,24 @@ function swish(){if(!AC||MUTE)return;const L=AC.sampleRate*.13,b=AC.createBuffer
  const s=AC.createBufferSource(),f=AC.createBiquadFilter(),v=AC.createGain(),t=AC.currentTime;
  s.buffer=b;f.type='bandpass';f.Q.value=1.2;f.frequency.setValueAtTime(2800,t);f.frequency.exponentialRampToValueAtTime(650,t+.13);
  v.gain.value=.45;s.connect(f);f.connect(v);v.connect(MASTER);s.start(t)}
+function ha(f,d,v,dl,fq){if(!AC||MUTE)return; // «ха»: пила с резким падом высоты через formant-фильтр — иначе смех не читается, а просто пищит
+ const a=AC.createOscillator(),bp=AC.createBiquadFilter(),v2=AC.createGain(),t=AC.currentTime+(dl||0);
+ a.type='sawtooth';a.frequency.setValueAtTime(f,t);a.frequency.exponentialRampToValueAtTime(f*.7,t+d*.85);
+ bp.type='bandpass';bp.Q.value=4;bp.frequency.value=fq;
+ v2.gain.setValueAtTime(0,t);v2.gain.linearRampToValueAtTime(v,t+.012);v2.gain.exponentialRampToValueAtTime(.0001,t+d);
+ a.connect(bp);bp.connect(v2);v2.connect(MASTER);a.start(t);a.stop(t+d+.03)}
+let lgT=0;
+function laugh(k){if(!AC||MUTE)return; // k=1 — ехидный смех хейтера (вниз), иначе победный смех Вали (вверх)
+ if(!k&&AC.currentTime-lgT<.16)return;if(!k)lgT=AC.currentTime; // срезка кластера фраз: четыре «ха» разом — каша
+ for(let i=0;i<4;i++)ha(k?250*(1-i*.1):420*(1+i*.16),k?.1:.075,k?.19:.24,i*(k?.1:.075),k?680:1150)}
 function snd(k){if(!AC||MUTE)return;
  if(k=='jump')n(587,.22,.5,'triangle',0,1.5);
  else if(k=='djump'){n(880,.2,.34,'triangle',0,2);n(1320,.16,.2,'sine',.06,1.4)} // двойной прыжок — свист выше
  else if(k=='swing')swish();
- else if(k=='kill'){n(784,.12,.45,'triangle');n(1175,.26,.35,'sine',.06);
-  n(560,.09,.3,'sawtooth',.1,.55);n(470,.09,.28,'sawtooth',.2,.55);n(380,.13,.3,'sawtooth',.3,.5)} // хейтер умирает — «ха-ха-ха»
- else if(k=='ph'){n(1500,.06,.26,'square',0,.35);n(900,.07,.2,'square',.05,1.5);n(760,.06,.18,'square',.12,1.5)} // фраза лопнула — «пик» и смешок
- else if(k=='coin'){n(1047,.1,.3,'sine');n(1568,.2,.28,'sine',.05)}
- else if(k=='hurt'){n(196,.3,.5,'sawtooth',0,.5);n(340,.14,.32,'square',.02,.5);
-  n(200,.16,.26,'sawtooth',.16,.6);n(160,.18,.24,'sawtooth',.32,.7)} // Валя: «ах!», потом смех хейтера
+  else if(k=='kill'){n(784,.12,.45,'triangle');n(1175,.26,.35,'sine',.06);laugh(0)} // хейтер умирает — аккорд и победный смех Вали
+  else if(k=='ph'){n(1500,.06,.26,'square',0,.35);laugh(0)} // фраза лопнула — «пик» и смешок
+  else if(k=='coin'){n(1047,.1,.3,'sine');n(1568,.2,.28,'sine',.05)}
+  else if(k=='hurt'){n(196,.3,.5,'sawtooth',0,.5);n(340,.14,.32,'square',.02,.5);laugh(1)} // Валя: «ах!», потом ехидный смех хейтера
  else if(k=='win'){[523,659,784,1047].forEach((f,i)=>n(f,.55,.3,'triangle',i*.09));n(2093,.75,.12,'sine',.36)}
  else if(k=='lose'){[392,370,330,247].forEach((f,i)=>n(f,.6,.28,'triangle',i*.14))}
  else if(k=='start'){[523,784].forEach((f,i)=>n(f,.4,.22,'sine',i*.08))}
@@ -231,14 +239,14 @@ function mapSel(d){if(!mapBtns.length)return;mapSelI=(mapSelI+d+mapBtns.length)%
  mapBtns.forEach(([i,b],k)=>b.classList.toggle('sel',k==mapSelI))}
 function reset(i){
  li=i;L=LV[i];W=L.w;GY=L.gy;LH=L.h;
- P={x:60,y:L.sp?L.sp[1]:GY-44,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3,jp:0,lnd:0,kills:0,j:1}; // j — запас двойного прыжка
+ P={x:60,y:L.sp?L.sp[1]:GY-44,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:18,inv:0,hp:3,jp:0,lnd:0,kills:0,j:1}; // j — запас двойного прыжка, atk:18 — первый взмах сразу
  coins=[];foes=[];pops=[];shots=[];score=0;state='play';cam=0;camY=0;shake=0;boss=null;finOpen=0;buildCity();mapEl.style.display='none';document.body.classList.remove('menu');if(wantFs&&!document.fullscreenElement)goFs(1);snd('start');
  L.p.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
  const kd=Math.min(3,li>>1); // тип хейтера растёт с уровнем: 0 нуль, 1 стрелок, 2 залповый, 3 босс
  AG=1+Math.min(1,bank/1500); // чем богаче Валя, тем злее хейтеры: скорость и частота залпов
  if(AG>=1.25&&!taught){taught=1;hint=260} // один раз за сессию объясняем правило прямо в игре
    L.f.forEach((f,i)=>foes.push({x:f[0],y:f[1],y0:f[1],w:30,h:34,vx:f[3]*(1+kd*.3)*AG,sx:0,d:i%2?1:-1,dg:0,ch:0,x0:f[0]-f[2],x1:f[0]+f[2],tx:hats[i%7],sh:-600,k:kd,hp:1+(kd>1)+(kd>2),sr:t+40+(i*37)%90,vy:0,on:1}));
-  if(L.bs){boss={x:L.bs[0],y:L.bs[1],y0:L.bs[1],w:BOSS.w,h:BOSS.h,vx:2.2*AG,sx:0,d:-1,dg:0,ch:0,x0:340,x1:2140,tx:'директор',tq:0,sp:60,sh:-600,k:5,hp:BOSS.hp,bs:BOSS.hp,sr:t+50,vy:0,on:1,hi:0};foes.push(boss)}
+  if(L.bs){boss={x:L.bs[0],y:L.bs[1],y0:L.bs[1],w:BOSS.w,h:BOSS.h,vx:2.2*AG,sx:0,d:-1,dg:0,ch:0,x0:340,x1:2140,tx:'директор',tq:0,sp:60,sh:-600,k:5,hp:BOSS.hp,bs:BOSS.hp,sr:t+50,vy:0,on:1,hi:0,ht:0};foes.push(boss)}
  }
 function pop(x,y,s,c){pops.push({x,y,s,c,l:50})}
 function hurt(){if(P.inv>0)return; // защита в общей точке урона: иначе залп фраз снимает все 3 жизни за один кадр
@@ -272,8 +280,7 @@ function update(){
  if(tap.Space||tap.ArrowUp||tap.KeyW){tap.Space=tap.ArrowUp=tap.KeyW=0; // прыжок по нажатию: два раза — двойной
   if(P.on){P.vy=-12.5;P.on=0;P.jp=20;P.j=1;snd('jump')}
   else if(P.j){P.vy=-11;P.j--;P.jp=14;snd('djump');pops.push({x:P.x+12,y:P.y+2,s:'двойной прыжок',c:'#5ce1e6',l:26})}}
-if((keys.KeyX||keys.KeyJ)&&P.atk<=0){P.atk=18;snd('swing')}
- P.atk--;P.inv--;shieldT=Math.max(0,shieldT-1);P.jp=Math.max(0,P.jp-1);P.lnd=Math.max(0,P.lnd-1);
+P.atk--;if(P.atk<-8){P.atk=18;snd('swing')} // меч зажат намертво: 18 кадров взмах, 9 пауза, снова — кнопка удара не нужна, сзади уязвимP.inv--;shieldT=Math.max(0,shieldT-1);P.jp=Math.max(0,P.jp-1);P.lnd=Math.max(0,P.lnd-1);
  P.x=Math.max(0,Math.min(W-P.w,P.x+P.vx));blockX(P);
  const py=P.y;P.vy+=.65;P.y+=P.vy;solid(P,py);
   if(Math.abs(P.vx)>RUNV&&P.on&&Math.random()<.15)pops.push({x:P.x+3,y:P.y+42,s:'',c:'#e8dcff',l:22,d:1});
@@ -287,7 +294,7 @@ const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
     if(e===boss){
      const ad=Math.abs(P.x+12-bcx),pv=e.hp<=e.bs/2; // со второй половины быстрее и злее
      if(!e.hi&&ad<540){e.hi=1;pop(bcx,e.y-40,'Я ГЛАВНЫЙ ЗДЕСЬ','#ff2d55');shake=7}
-     if(e.dg>0)e.dg--;if(e.ch>0)e.ch--;
+      if(e.dg>0)e.dg--;if(e.ch>0)e.ch--;if(e.ht>0)e.ht--;
      if(e.dg){e.sx+=((pv?3.4:2.2)*AG-e.sx)*.16} // отскок от меча — резкий, с коротким разгоном
       else if(e.on&&e.sp<=0&&ad<170){e.d=P.x+12>bcx?1:-1;e.vy=-14;e.on=0;e.sp=pv?58:74;e.lnd1=0;shake=5} // подскочил и рухнул сверху
      else if(P.x+12>e.x+e.w+28||P.x+12<e.x-28)e.ch=pv?78:64; // герой за спиной — догоняет и расталкивает залпом
@@ -304,10 +311,11 @@ const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
     }
      if(hb&&hit(hb,e)){
       if(e.tq>0){pop(bcx,e.y-24,'ПРЯЧЬСЯ!','#ffd54a');continue} // на замахе неуязвим: бей после залпа, а не спамь мечом
-      if(--e.hp>0){snd('swing');e.dg=26;e.d=P.x+12>bcx?1:-1;continue} // отскочил от меча, но ещё жив
+      if(e.ht>0)continue // Director держит удар: зажатый меч бьёт каждые 27 кадров, без паузы он рассыпался бы за две секунды
+      if(--e.hp>0){e.ht=18;snd('swing');e.dg=26;e.d=P.x+12>bcx?1:-1;continue} // отскочил от меча, но ещё жив
      e.dead=1;boss=null;finOpen=1;const v=500;score+=v;pop(bcx,e.y+60,'+'+v+' ₽','#ffd54a');
      pop(bcx,e.y-30,'ВОТ И ДИРЕКТОР','#ff2d55');shake=14;P.kills++;
-     pops.push({x:bcx,y:e.y-70,s:'СТРИМ СВОБОДЕН',st:1,rot:(Math.random()-.5)*.3,l:60});snd('win');pops.push({x:bcx,y:e.y-14,s:'врата открыты!',c:'#5ce1e6',l:60});continue}
+     pops.push({x:bcx,y:e.y-70,s:'СТРИМ СВОБОДЕН',st:1,rot:(Math.random()-.5)*.3,l:60});laugh(0);snd('win');pops.push({x:bcx,y:e.y-14,s:'врата открыты!',c:'#5ce1e6',l:60});continue}
     if(P.inv<=0&&hit(P,e)){P.x-=Math.sign(P.x+12-bcx||1)*36;hurt();pops.push({x:P.x+12,y:P.y-12,s:'не лезь к боссу!',st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.4,l:44})}
     continue}
    const ex=e.x+15,px=P.x+12,ad=Math.abs(px-ex),ahead=P.f>0?ex>px:ex<px; // враг перед героем или за спиной
