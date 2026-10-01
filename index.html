@@ -54,7 +54,7 @@ body.menu #pad,body.menu small,body.menu canvas,body.menu #fs,body.menu #гай�
 <div id="игр"><canvas id="c" width="800" height="450"></canvas>
   <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>X</b>меч</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span></div>
   <div id="гром"><i></i><i></i><i></i><i></i><i></i><s>−</s><s>+</s></div>
- <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок (можно дважды) · X удар · C щит · F полный экран · N музыка · ⇧N громкость · M звук</p><p id=совет>← → выбрать уровень · Enter начать</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты от фраз</p><p>В финале живёт 👑 Директор — 14 попаданий, залпы веером и прыжок с ударом. Сбей его — откроются врата стрима.</p></div>
+ <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок (можно дважды) · X удар · C щит · F полный экран · N музыка · ⇧N громкость · M звук</p><p id=совет>← → выбрать уровень · Enter начать</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты от фраз</p><p>В финале живёт 👑 Директор: пока он замахивается — неуязвим, бей после залпа. Сбей его — откроются врата стрима.</p></div>
  <div id="кнопки"><button id="муз" aria-label="Музыка">♪</button><button id="fs" aria-label="Полный экран">⛶</button></div></div>
 <div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyX">⚔</button><button data-k="KeyC">🛡</button><button data-k="Space">⤒</button></div></div>
 <script>
@@ -196,7 +196,7 @@ const LV=[ // w,h,gy,sky,fin,sp?,p[0]=земля,f=[x,y,патруль,vx],s=[с
     a:[[200,1270,1],[400,1200,1],[630,1270,1],[1180,1340,1],[1800,1180,1],[2330,1040,-1],[2330,760,-1],[2700,570,1],[3440,750,1],[4180,930,1],[4300,1340,1]],
    f:[[600,1306,80,1.8],[1400,1306,80,2],[1980,936,60,1.4],[1980,516,60,1.5],[2350,586,60,1.6],[3460,716,60,1.7],[4300,1306,80,2.1]]}];
 const EDG=[[0,1],[0,2],[1,3],[2,3],[3,4],[3,5],[4,6],[5,6]]; // ветки карты
-const BOSS={x:1230,y:1156,w:220,h:184,hp:14,r:105,st:1}; // 👑 Директор: спавн, прочность, радиус прыжка, ступенька
+const BOSS={x:1230,y:1156,w:220,h:184,hp:30,r:105,st:1}; // 👑 Директор: спавн, прочность, радиус прыжка, ступенька
 const NOD=[[9,50],[28,24],[28,76],[48,50],[68,26],[68,74],[88,50]]; // позиции узлов, %
 const hats=["кринж","фу","ноль","уйди","лол","скуф","цирк"];
 const say=["куда ты, ссыкло?","не суйся","иди в стрим","ты тут не свой","беги, клоун","слышь, отвали"]; // фразы, когда Валя пробегает мимо
@@ -289,20 +289,22 @@ const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
      if(!e.hi&&ad<540){e.hi=1;pop(bcx,e.y-40,'Я ГЛАВНЫЙ ЗДЕСЬ','#ff2d55');shake=7}
      if(e.dg>0)e.dg--;if(e.ch>0)e.ch--;
      if(e.dg){e.sx+=((pv?3.4:2.2)*AG-e.sx)*.16} // отскок от меча — резкий, с коротким разгоном
-     else if(e.on&&e.sp<=0&&ad<170){e.d=P.x+12>bcx?1:-1;e.vy=-14;e.on=0;e.sp=74;e.lnd1=0;shake=5} // подскочил и рухнул сверху
+      else if(e.on&&e.sp<=0&&ad<170){e.d=P.x+12>bcx?1:-1;e.vy=-14;e.on=0;e.sp=pv?58:74;e.lnd1=0;shake=5} // подскочил и рухнул сверху
      else if(P.x+12>e.x+e.w+28||P.x+12<e.x-28)e.ch=pv?78:64; // герой за спиной — догоняет и расталкивает залпом
      else{e.ch=0;if(!e.ch&&!e.dg){if(e.x<e.x0)e.d=1;if(e.x>e.x1)e.d=-1}}
      e.sx+=(e.vx*(e.ch>0?1.5:1)-e.sx)*.09;
      e.x=Math.max(0,Math.min(W-e.w,e.x+e.sx*e.d));
      if(e.tq>0){ // замах: приседает и телеграфирует удар
       e.tq--;e.vx=0;e.sx=0;
-      if(e.tq===1){const a=Math.atan2(P.y+22-e.y-6,P.x+12-bcx);for(let i=-2;i<=2;i++)shoot({x:bcx,y:e.y+26},a+i*.17);e.sp=pv?66:84;shake=4;snd('swing')}
+       if(e.tq===1){const a=Math.atan2(P.y+22-e.y-6,P.x+12-bcx),n=pv?3:2;for(let i=-n;i<=n;i++)shoot({x:bcx,y:e.y+26},a+i*.17);e.sp=pv?66:84;shake=4;snd('swing')}
      }else{e.vy+=.7;e.y+=e.vy;solid(e,e.y-e.vy);if(e.on){if(e.sp>0)e.sp--;if(!e.lnd1){e.lnd1=1;shake=7;
        pop(bcx,e.y+e.h,'УДАР','#ff2d55');for(const dd of[-1,1]){shots.push({x:bcx+dd*60,y:e.y+e.h-24,vx:dd*3.4,vy:-1.6,sp:3.7,s:'ОТПИСАТЬ',l:150})}
        snd('kill')}}}
      if(t>e.sr){e.sr=t+(pv?100:140)/AG|0;e.tq=pv?20:28} // телеграф залпа
     }
-    if(hb&&hit(hb,e)){if(--e.hp>0){snd('swing');e.dg=26;e.d=P.x+12>bcx?1:-1;continue} // отскочил от меча, но ещё жив
+     if(hb&&hit(hb,e)){
+      if(e.tq>0){pop(bcx,e.y-24,'ПРЯЧЬСЯ!','#ffd54a');continue} // на замахе неуязвим: бей после залпа, а не спамь мечом
+      if(--e.hp>0){snd('swing');e.dg=26;e.d=P.x+12>bcx?1:-1;continue} // отскочил от меча, но ещё жив
      e.dead=1;boss=null;finOpen=1;const v=500;score+=v;pop(bcx,e.y+60,'+'+v+' ₽','#ffd54a');
      pop(bcx,e.y-30,'ВОТ И ДИРЕКТОР','#ff2d55');shake=14;P.kills++;
      pops.push({x:bcx,y:e.y-70,s:'СТРИМ СВОБОДЕН',st:1,rot:(Math.random()-.5)*.3,l:60});snd('win');pops.push({x:bcx,y:e.y-14,s:'врата открыты!',c:'#5ce1e6',l:60});continue}
