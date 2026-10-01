@@ -52,7 +52,7 @@ canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#
 body.menu #pad,body.menu small,body.menu canvas,body.menu #fs,body.menu #гайд{visibility:hidden}
 </style></head><body>
 <div id="игр"><canvas id="c" width="800" height="450"></canvas>
-  <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>X</b>меч</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span></div>
+  <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span></div>
   <div id="гром"><i></i><i></i><i></i><i></i><i></i><s>−</s><s>+</s></div>
  <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок (можно дважды) · меч бьёт сам · C щит · F полный экран · N музыка · ⇧N громкость · M звук</p><p id=совет>← → выбрать уровень · Enter начать</p><p>Меч зажат всегда и бьёт только вперёд: за спиной Валя уязвима — разворачивайся.</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты от фраз</p><p>В финале живёт 👑 Директор: пока он замахивается — неуязвим, бей после залпа. Сбей его — откроются врата стрима.</p></div>
  <div id="кнопки"><button id="муз" aria-label="Музыка">♪</button><button id="fs" aria-label="Полный экран">⛶</button></div></div>
@@ -257,12 +257,12 @@ function shKey(){ // щит тратит заряд: гасит любой ур�
  shield--;P.inv=Math.max(P.inv,90);shieldT=90;save();snd('shield');
  pops.push({x:P.x+12,y:P.y-16,s:'ЩИТ',st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.3,l:44})}
 function shoot(e,a){a=a==null?Math.atan2(P.y+22-e.y-6,P.x+12-e.x):a;shots.push({x:e.x+15,y:e.y+6,vx:Math.cos(a)*4.2,vy:Math.sin(a)*4.2,sp:4.2,s:say[Math.random()*say.length|0],l:200})} // фраза-снаряд сама наводится на Валю
-function solid(o,py){ // one-way landing; вызывается для Вали и босса, хейтеры садятся own-проверкой ниже
+function land(o,py,b){if(o.x+o.w>b[0]&&o.x<b[0]+b[2]&&o.vy>=0&&py+o.h<=b[1]+2&&o.y+o.h>=b[1]){o.lnd=o.vy>2?10:o.lnd;o.y=b[1]-o.h;o.vy=0;o.on=1;o.j=1}}
+function solid(o,py){ // one-way landing; + блоки уровня: на них можно запрыгнуть, если есть ширина
    o.on=0;
-   for(const p of L.p){
-   if(o.x+o.w>p[0]&&o.x<p[0]+p[2]&&o.vy>=0&&py+o.h<=p[1]+2&&o.y+o.h>=p[1]){o.lnd=o.vy>2?10:o.lnd;o.y=p[1]-o.h;o.vy=0;o.on=1;o.j=1}
+   for(const p of L.p)land(o,py,p);
+   for(const b of L.s||[])land(o,py,b);
   }
-}
 function blockX(o){ // стены уровня непроходимы по X: выталкиваем к ближайшей грани
  for(const b of L.s||[]){
   if(o.y+o.h>b[1]+3&&o.y<b[1]+b[3]&&o.x+o.w>b[0]&&o.x<b[0]+b[2])
@@ -280,7 +280,8 @@ function update(){
  if(tap.Space||tap.ArrowUp||tap.KeyW){tap.Space=tap.ArrowUp=tap.KeyW=0; // прыжок по нажатию: два раза — двойной
   if(P.on){P.vy=-12.5;P.on=0;P.jp=20;P.j=1;snd('jump')}
   else if(P.j){P.vy=-11;P.j--;P.jp=14;snd('djump');pops.push({x:P.x+12,y:P.y+2,s:'двойной прыжок',c:'#5ce1e6',l:26})}}
-P.atk--;if(P.atk<-8){P.atk=18;snd('swing')} // меч зажат намертво: 18 кадров взмах, 9 пауза, снова — кнопка удара не нужна, сзади уязвимP.inv--;shieldT=Math.max(0,shieldT-1);P.jp=Math.max(0,P.jp-1);P.lnd=Math.max(0,P.lnd-1);
+P.atk--;if(P.atk<-8&&(foes.some(e=>!e.dead)||shots.length))P.atk=18; // меч зажат, но поднимается только когда есть кого бить; звук даёт сам удар
+ P.inv--;shieldT=Math.max(0,shieldT-1);P.jp=Math.max(0,P.jp-1);P.lnd=Math.max(0,P.lnd-1);
  P.x=Math.max(0,Math.min(W-P.w,P.x+P.vx));blockX(P);
  const py=P.y;P.vy+=.65;P.y+=P.vy;solid(P,py);
   if(Math.abs(P.vx)>RUNV&&P.on&&Math.random()<.15)pops.push({x:P.x+3,y:P.y+42,s:'',c:'#e8dcff',l:22,d:1});
@@ -293,7 +294,7 @@ const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
     const bcx=e.x+e.w/2;
     if(e===boss){
      const ad=Math.abs(P.x+12-bcx),pv=e.hp<=e.bs/2; // со второй половины быстрее и злее
-     if(!e.hi&&ad<540){e.hi=1;pop(bcx,e.y-40,'Я ГЛАВНЫЙ ЗДЕСЬ','#ff2d55');shake=7}
+      if(!e.hi&&ad<540){e.hi=1;pop(bcx,e.y-40,'БЕЙ ПО РОГАМ!','#ff2d55');shake=7}
       if(e.dg>0)e.dg--;if(e.ch>0)e.ch--;if(e.ht>0)e.ht--;
      if(e.dg){e.sx+=((pv?3.4:2.2)*AG-e.sx)*.16} // отскок от меча — резкий, с коротким разгоном
       else if(e.on&&e.sp<=0&&ad<170){e.d=P.x+12>bcx?1:-1;e.vy=-14;e.on=0;e.sp=pv?58:74;e.lnd1=0;shake=5} // подскочил и рухнул сверху
@@ -426,15 +427,15 @@ function girl(){
   g.fillStyle='#1b1b22';g.fillRect(x+9+f,y+8,3,3);g.fillRect(x+13+f,y+8,3,3); // глаза
   g.fillRect(x+9+f,y+7,3,1);g.fillRect(x+14+f,y+7,3,1); // ресницы
   g.fillStyle='#ff9bb0';g.globalAlpha=.45;g.fillRect(x+7,y+11,3,1);g.fillRect(x+14,y+11,3,1);g.globalAlpha=1; // румянец
- // меч
- g.save();g.translate(x+12+f*8,y+22);
- const a=P.atk>0?(-1.4+(18-P.atk)/18*2.6)*f:1.3*f;g.rotate(a);
- g.fillStyle='#8a5a2b';g.fillRect(-2,-4,4,8);g.fillStyle='#ffd54a';g.fillRect(-6,-6,12,3);
+ // меч: за взмах машет из стороны в сторону (маятник), в покое — за спиной
+ const pr=P.atk>0?(18-P.atk)/18:1,sa=P.atk>0?Math.sin(pr*6.283)*1.2:1.3;
+ g.save();g.translate(x+12,y+22);g.scale(f,1);
+ if(P.atk>0){g.globalAlpha=.4;g.strokeStyle='#dfe9ff';g.lineWidth=6;g.beginPath();g.arc(0,0,38,sa-.6,sa+.1);g.stroke();g.globalAlpha=1}
+ g.rotate(sa);g.fillStyle='#8a5a2b';g.fillRect(-2,-4,4,8);g.fillStyle='#ffd54a';g.fillRect(-6,-6,12,3);
  g.fillStyle='#dfe9ff';g.fillRect(-2,-40,4,34);g.restore();
- g.restore();
+  g.restore();
  if(flip){const a=t*.35;g.fillStyle='#ffd54a';g.beginPath();g.arc(x+12+Math.cos(a)*15,y-3+Math.sin(a)*6,2.6,0,7);g.fill()}
- if(P.atk>10){g.strokeStyle='#ffffff88';g.lineWidth=3;g.beginPath();g.arc(x+12,y+22,42,f>0?-1.2:Math.PI-.8,f>0?.8:Math.PI+1.2);g.stroke()}
-  if(shieldT>0){g.globalAlpha=Math.min(1,shieldT/30);g.strokeStyle='#5ce1e6';g.lineWidth=4;g.beginPath();g.arc(x+12,y+22,34,0,7);g.stroke();
+ if(shieldT>0){g.globalAlpha=Math.min(1,shieldT/30);g.strokeStyle='#5ce1e6';g.lineWidth=4;g.beginPath();g.arc(x+12,y+22,34,0,7);g.stroke();
    g.strokeStyle='#ffffffaa';g.lineWidth=2;g.beginPath();g.arc(x+12,y+22,29,0,7);g.stroke();g.globalAlpha=1}
 }
  function hater(e){
@@ -467,6 +468,7 @@ function girl(){
   g.fillStyle='#000';g.fillRect(8,22,14,3);
   if(e.tq>0){g.fillStyle='#fff';for(let i=0;i<5;i++){g.beginPath();g.moveTo(3+i*6,25);g.lineTo(6+i*6,20);g.lineTo(9+i*6,25);g.fill()}} // замах: зубастая ухмылка
   g.save();g.translate(15,-7);g.rotate(-.1);g.font='bold 11px system-ui';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#1c1526';g.strokeText(e.tx,0,0);g.fillStyle=pv?'#ff5c8a':'#ff2d55';g.fillText(e.tx,0,0);g.restore();
+  g.save();g.translate(15,-23);g.font='bold 7px system-ui';g.textAlign='center';g.lineWidth=2.5;g.strokeStyle='#1c1526';g.strokeText('БЕЙ ПО РОГАМ',0,0);g.fillStyle='#ffd54a';g.fillText('БЕЙ ПО РОГАМ',0,0);g.restore(); // подсказка над боссом: куда бить
   g.restore();
   const bw=W,frac=e.hp/e.bs; // полоса прочности под боссом
   g.fillStyle='#000000aa';rr(e.x,e.y+h+6,bw,9,4,'#000000aa');
@@ -504,7 +506,8 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
   if(L.fin[2]&&!finOpen){ // врата стрима заперты, пока жив босс
    g.fillStyle='#3a2e1c';g.fillRect(L.fin[0]+4,L.fin[1]-80,42,80);
    g.strokeStyle='#ffd54a';g.lineWidth=3;g.strokeRect(L.fin[0]+4,L.fin[1]-80,42,80);
-   g.fillStyle='#ffd54a';g.font='bold 13px system-ui';g.textAlign='center';g.fillText('ЗАКРЫТО',L.fin[0]+25,L.fin[1]-90);
+   g.fillStyle='#ffd54a';g.font='bold 13px system-ui';g.textAlign='center';g.fillText('ЗАКРЫТО',L.fin[0]+25,L.fin[1]-92);
+   g.font='bold 11px system-ui';g.fillStyle='#ff9bb0';g.fillText('надо вальнуть директора',L.fin[0]+25,L.fin[1]-106);
   }
    pops.forEach(p=>{if(p.d){g.globalAlpha=p.l/22;g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,2+(22-p.l)/5,0,7);g.fill();g.globalAlpha=1;return}
   if(p.st){g.save();g.globalAlpha=Math.min(1,p.l/26);g.translate(p.x,p.y);g.rotate(p.rot);const z=1+(52-p.l)/40;g.scale(z,z);g.font='bold '+(p.l<30?16:22)+'px system-ui';g.textAlign='center';g.lineWidth=5;g.strokeStyle='#1c1526';g.strokeText(p.s,0,0);g.fillStyle=p.c||'#ff5c8a';g.fillText(p.s,0,0);g.restore();return}
