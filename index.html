@@ -31,7 +31,7 @@ canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#
 #гром{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.92);z-index:7;display:flex;align-items:flex-end;gap:7px;
  padding:12px 16px;border-radius:14px;background:#0b0518e6;border:2px solid #7b5ea7;opacity:0;pointer-events:none;transition:opacity .16s,transform .16s}
 #гром.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
-#гром i{width:10px;border-radius:3px;background:#4a3775;transition:background .12s,box-shadow .12s}
+ #гром i{width:8px;border-radius:3px;background:#4a3775;transition:background .12s,box-shadow .12s}
 #гром i.on{background:#5ce1e6;box-shadow:0 0 9px #5ce1e6aa}
 #гром s{font:700 15px system-ui;color:#e6dcff;text-decoration:none;opacity:.55;padding-bottom:2px}
 #map{display:none;position:fixed;inset:0;z-index:9;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px 12px;overflow:auto;text-align:center}
@@ -53,7 +53,7 @@ body.menu #pad,body.menu small,body.menu canvas,body.menu #fs,body.menu #гай�
 </style></head><body>
 <div id="игр"><canvas id="c" width="800" height="450"></canvas>
   <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>X</b>меч</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span></div>
- <div id="гром"><i></i><i></i><i></i><s>−</s><s>+</s></div>
+  <div id="гром"><i></i><i></i><i></i><i></i><i></i><s>−</s><s>+</s></div>
  <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок (можно дважды) · X удар · C щит · F полный экран · N музыка · ⇧N громкость · M звук</p><p id=совет>← → выбрать уровень · Enter начать</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты от фраз</p><p>В финале живёт 👑 Директор — 14 попаданий, залпы веером и прыжок с ударом. Сбей его — откроются врата стрима.</p></div>
  <div id="кнопки"><button id="муз" aria-label="Музыка">♪</button><button id="fs" aria-label="Полный экран">⛶</button></div></div>
 <div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyX">⚔</button><button data-k="KeyC">🛡</button><button data-k="Space">⤒</button></div></div>
@@ -82,18 +82,19 @@ document.querySelectorAll('#pad button').forEach(b=>{
 cv.addEventListener('pointerdown',e=>{if(state!='play'){toMap();return} // тап по канвасу вне игры — карта
  const r=cv.getBoundingClientRect(),cx=(e.clientX-r.left)/r.width,cy=(e.clientY-r.top)/r.height;
  if(Math.abs(cx-.5)<.16&&Math.abs(cy-.5)<.26)volStep()}); // клик по центру экрана — регулятор громкости
-let vlv=2,vdir=-1,volT=0; // 3 палочки, rockers: в одну сторону тише, на краю разворот в другую
-const volEl=document.getElementById('гром');
-function volStep(){if(vlv<=0)vdir=1;if(vlv>=2)vdir=-1;vlv=Math.max(0,Math.min(2,vlv+vdir));
- if(MUSG)MUSG.gain.value=[.08,.2,.34][vlv];
- volEl.querySelectorAll('i').forEach((b,i)=>{b.style.height=[16,26,36][i]+'px';b.classList.toggle('on',i<=vlv)}); // показываем значок с 3 палочками
- volEl.classList.add('on');volT=80}
+ const VVOL=[.06,.12,.2,.32,.5],VBAR=[11,17,24,31,39]; // 5 делений, верхнее громче прежних трёх
+ let vlv=3,vdir=-1,volT=0; // rockers: в одну сторону тише, на краю разворот в другую
+ const volEl=document.getElementById('гром'),VMX=VVOL.length-1;
+ function volStep(){if(vlv<=0)vdir=1;if(vlv>=VMX)vdir=-1;vlv=Math.max(0,Math.min(VMX,vlv+vdir));
+  if(MUSG)MUSG.gain.value=VVOL[vlv];
+  volEl.querySelectorAll('i').forEach((b,i)=>{b.style.height=VBAR[i]+'px';b.classList.toggle('on',i<=vlv)}); // показываем значок с палочками
+  volEl.classList.add('on');volT=80}
 function volHide(){if(volT>0&&--volT<1)volEl.classList.remove('on')}
 // --- звук: синтез, без файлов. До-мажорная пентатоника, мягкая атака 12мс
 let AC,MASTER,MUTE=0,MUSG;
 function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)}catch(e){return}
  MASTER=AC.createGain();MASTER.gain.value=.16;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=6000;MASTER.connect(lp);lp.connect(AC.destination);
- MUSG=AC.createGain();MUSG.gain.value=[.08,.2,.34][vlv];MUSG.connect(MASTER);mus.next=AC.currentTime+.12;setInterval(musTick,25)}
+ MUSG=AC.createGain();MUSG.gain.value=VVOL[vlv];MUSG.connect(MASTER);mus.next=AC.currentTime+.12;setInterval(musTick,25)}
 function n(f,d,g,type,delay,glide){if(!AC||MUTE)return;const a=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime+(delay||0);
  a.type=type||'sine';a.frequency.setValueAtTime(f,t);if(glide)a.frequency.exponentialRampToValueAtTime(f*glide,t+d);
  v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g,t+.012);v.gain.exponentialRampToValueAtTime(.0001,t+d);
@@ -201,7 +202,7 @@ const hats=["кринж","фу","ноль","уйди","лол","скуф","ци�
 const say=["куда ты, ссыкло?","не суйся","иди в стрим","ты тут не свой","беги, клоун","слышь, отвали"]; // фразы, когда Валя пробегает мимо
 let P,coins,foes,state,cam,camY,score,t=0,pops,shots,hint=0,taught=0,boss=null,finOpen=0;
 let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[0,0,0,0,0,0,0],bank=0,lost=0,AG=1;
-const SHPRICE=100,SHMAX=3; // щит: 100₽ за 3 защиты
+ const SHPRICE=100,SHMAX=3,RUNV=.6; // щит: 100₽ за 3 защиты; порог «бежит» — иначе инерция проигрывает бег на месте
 let shield=0,shieldT=0;
 const mapEl=document.getElementById('map'),pathEl=document.getElementById('path');
 try{const d=localStorage.getItem('hori_done'),u=+localStorage.getItem('hori_unlocked');
@@ -275,7 +276,7 @@ if((keys.KeyX||keys.KeyJ)&&P.atk<=0){P.atk=18;snd('swing')}
  P.atk--;P.inv--;shieldT=Math.max(0,shieldT-1);P.jp=Math.max(0,P.jp-1);P.lnd=Math.max(0,P.lnd-1);
  P.x=Math.max(0,Math.min(W-P.w,P.x+P.vx));blockX(P);
  const py=P.y;P.vy+=.65;P.y+=P.vy;solid(P,py);
- if(P.vx&&P.on&&Math.random()<.15)pops.push({x:P.x+3,y:P.y+42,s:'',c:'#e8dcff',l:22,d:1});
+  if(Math.abs(P.vx)>RUNV&&P.on&&Math.random()<.15)pops.push({x:P.x+3,y:P.y+42,s:'',c:'#e8dcff',l:22,d:1});
  // sword hitbox
  const hb=P.atk>0?{x:P.f>0?P.x+P.w:P.x-50,y:P.y-4,w:50,h:P.h}:null;
 const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
@@ -380,7 +381,7 @@ function skyCity(){
  g.fillStyle='rgba(18,10,34,.8)';g.fillRect(0,by,800,450-by); // город обрывался выше низа кадра — розовое небо; продолжаем фон вниз
 }
 function girl(){
- const x=P.x,f=P.f,run=P.vx&&P.on?1:0,ph=t*.5;
+  const x=P.x,f=P.f,run=Math.abs(P.vx)>RUNV&&P.on?1:0,ph=t*.5; // инерция гасит vx долго — рисуем бег только когда реально бежим
  let y=P.y;
  if(P.inv>0&&(t>>2)%2)return;
  y-=Math.abs(Math.sin(ph))*2*run;
@@ -428,10 +429,11 @@ function girl(){
 }
  function hater(e){
   if(e.k===5)return haterBoss(e); // 👑 Директор рисуется сам, в обход общей фигурки хейтера
-  const k=e.k,c=['#c0392b','#d35400','#8e44ad','#141420'][k],lc=['#5ce1e6','#ffd54a','#c39bd3','#ff5c8a'][k];
+  const k=e.k,c=['#ff5f4d','#ffa62b','#b98cff','#25e3c4'][k],lc=['#5ce1e6','#ffd54a','#c39bd3','#ff5c8a'][k]; // сочные тона: тёмный финал больше не съедает силуэт
   g.save();g.translate(e.x,e.y);
   if(k>2){g.fillStyle='#ffd54a';g.beginPath();g.moveTo(3,3);g.lineTo(8,-7);g.lineTo(13,3);g.lineTo(18,-7);g.lineTo(23,3);g.lineTo(28,-7);g.lineTo(33,3);g.closePath();g.fill()} // корона босса
-  rr(0,6,30,28,8,c);rr(3,0,24,14,6,k?'#2c1e3f':'#e74c3c');
+  rr(0,6,30,28,8,c);rr(3,0,24,14,6,'#33224d');
+  g.lineWidth=2;g.strokeStyle='#150a22';g.beginPath();g.roundRect(0,6,30,28,8);g.roundRect(3,0,24,14,6);g.stroke(); // тёмный контур: читается и на светлом небе, и на тёмном
   if(k>1){g.fillStyle='#ffd54a';g.beginPath();g.moveTo(2,11);g.lineTo(-5,2);g.lineTo(2,5);g.fill();g.beginPath();g.moveTo(28,11);g.lineTo(35,2);g.lineTo(28,5);g.fill()} // шипы
   g.fillStyle='#fff';g.fillRect(7,8,6,5);g.fillRect(17,8,6,5);
   g.fillStyle='#000';g.fillRect(9,10,3,3);g.fillRect(18,10,3,3);
@@ -446,7 +448,8 @@ function girl(){
   const W=e.w,S=W/30,h=e.h,pv=e.hp<=e.bs/2;
   g.save();g.translate(e.x,e.y);g.scale(S,S);
   g.fillStyle='#ffd54a';g.beginPath();g.moveTo(3,3);g.lineTo(8,-7);g.lineTo(13,3);g.lineTo(18,-7);g.lineTo(23,3);g.lineTo(28,-7);g.lineTo(33,3);g.closePath();g.fill(); // корона
-  rr(0,6,30,28,8,'#141420');rr(3,0,24,14,6,pv?'#8e44ad':'#2c1e3f');
+  rr(0,6,30,28,8,'#2b1038');rr(3,0,24,14,6,pv?'#8e44ad':'#3b2158');
+  g.lineWidth=1.2;g.strokeStyle=pv?'#ff2d55':'#ff8fc0';g.beginPath();g.roundRect(0,6,30,28,8);g.roundRect(3,0,24,14,6);g.stroke(); // тёмный силуэт с ярким контуром вместо сливания с небом
   g.fillStyle=pv?'#ff2d55':'#ffd54a';g.beginPath();g.moveTo(2,11);g.lineTo(-5,2);g.lineTo(2,5);g.fill();g.beginPath();g.moveTo(28,11);g.lineTo(35,2);g.lineTo(28,5);g.fill(); // шипы
   g.fillStyle='#fff';g.fillRect(6,8,8,6);g.fillRect(16,8,8,6);
   g.fillStyle='#ff2d55';g.fillRect(9,10,4,4);g.fillRect(18,10,4,4); // злые глаза
