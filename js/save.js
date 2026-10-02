@@ -1,0 +1,1 @@
+function save(){try{localStorage.setItem('hori_done',done.join(','));localStorage.setItem('hori_best',best.join(','));localStorage.setItem('hori_bank',bank);localStorage.setItem('hori_shield',shield)}catch(e){}}
