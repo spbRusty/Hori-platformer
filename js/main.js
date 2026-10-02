@@ -1,5 +1,5 @@
 const cv=document.getElementById('c'),g=cv.getContext('2d');
-let P,coins,foes,state='map',cam,camY,score,t=0,pops,shots,hint=0,taught=0,boss=null,finOpen=0,winT=0;
+let P,coins,foes,state='map',cam,camY,score,t=0,pops,shots,shd,hint=0,taught=0,boss=null,finOpen=0,winT=0;
 let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[],bank=0,lost=0,AG=1;
 const SHPRICE=100,SHMAX=3,RUNV=.6,SWING=24;
 let shield=0,shieldT=0;
@@ -72,6 +72,8 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
     g.beginPath();for(let i=0;i<24;i++){const a=i/24*6.2832+t*.05,k=i%2?1:1.45;g.lineTo(Math.cos(a)*31*k,Math.sin(a)*13*k)}
     g.closePath();g.strokeStyle='#ff2d55';g.lineWidth=1.8;g.stroke()}
    g.font='bold 13px system-ui';g.textAlign='center';g.lineWidth=4.5;g.strokeStyle='#ff2d55';g.strokeText(s.s,0,0);g.fillStyle=s.g?'#ffd54a':'#ffe4ec';g.fillText(s.s,0,0);g.restore()}); // фразы в полёте
+ shd.forEach(q=>{g.save();g.translate(q.x,q.y);g.rotate(q.r);g.globalAlpha=Math.min(1,q.l/18);g.font='bold 13px system-ui';g.textAlign='center';
+  g.lineWidth=6;g.strokeStyle='#1c1526cc';g.strokeText(q.c,0,0);g.lineWidth=2.5;g.strokeStyle='#ff2d55';g.strokeText(q.c,0,0);g.fillStyle='#fff';g.fillText(q.c,0,0);g.restore()}); // осколки убитой фразы
  g.font='bold 14px system-ui';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#000a';g.strokeText('Валя',P.x+12,P.y-12);g.fillStyle='#fff';g.fillText('Валя',P.x+12,P.y-12);
   g.fillStyle='#fff';g.fillRect(L.fin[0],L.fin[1]-80,4,80);g.fillStyle='#ff5c8a';g.fillRect(L.fin[0]+4,L.fin[1]-80,34,22);
   if(L.fin[2]&&!finOpen){ // врата стрима заперты, пока жив босс

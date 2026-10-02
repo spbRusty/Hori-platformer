@@ -28,6 +28,8 @@ function update(){
  P.inv--;shieldT=Math.max(0,shieldT-1);P.jp=Math.max(0,P.jp-1);P.lnd=Math.max(0,P.lnd-1);
  P.x=Math.max(0,Math.min(W-P.w,P.x+P.vx));blockX(P);
  const py=P.y;P.vy+=.65;P.y+=P.vy;solid(P,py);
+ if(P.on){P.lx=P.x;P.ly=P.y} // запомнили твёрдую точку — воскрешаем здесь, а не на старте
+  if(P.y>LH+30){hurt();P.x=P.lx;P.y=P.ly;P.vx=P.vy=0;P.on=1;P.j=1;shake=9;pops.push({x:P.x+12,y:P.y-12,s:'провал!',st:1,c:'#ff5c8a',rot:(Math.random()-.5)*.4,l:44})} // улетела в пропасть: минус жизнь и возврат на последнюю площадку
   if(Math.abs(P.vx)>RUNV&&P.on&&Math.random()<.15)pops.push({x:P.x+3,y:P.y+42,s:'',c:'#e8dcff',l:22,d:1});
  // sword hitbox
  const hb=P.atk>0?{x:P.f>0?P.x+P.w:P.x-50,y:P.y-4,w:50,h:P.h}:null;
@@ -99,12 +101,13 @@ else if(P.x-e.x>130&&t-e.sh>420){e.sh=t;shoot(e);snd('swing')} // Валя об�
   if(s.l<=0)continue;
 if(hb&&hit(hb,{x:s.x-30,y:s.y-11,w:60,h:22})){ // слипшиеся фразы гасим одним взмахом: залп сходится в точку, иначе попап и звук дублируются
    shots.forEach(q=>{if(q!==s&&q.l>0&&Math.abs(q.x-s.x)<46&&Math.abs(q.y-s.y)<30)q.l=0});
-   s.l=0;score+=10;pops.push({x:s.x,y:s.y,s:s.s,st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.4,l:44});shake=3;snd('ph')}
+   s.l=0;score+=10;shatter(s.x,s.y,s.s);shake=3;snd('ph')}
    else if(shieldT>0&&Math.abs(s.x-P.x-12)<36&&Math.abs(s.y-P.y-22)<22){s.l=0;pops.push({x:s.x,y:s.y,s:'съедено щитом',st:1,c:'#5ce1e6',rot:0,l:40})} // щит не отбивает, а съедает фразу
    else if(P.inv<=0&&Math.abs(s.x-P.x-12)<36&&Math.abs(s.y-P.y-22)<22){s.l=0;P.x-=Math.sign(s.vx)*20;hurt();pops.push({x:s.x,y:s.y,s:s.s,st:1,c:'#ff5c8a',rot:(Math.random()-.5)*.3,l:40})}}
  shots=shots.filter(s=>s.l>0);
  for(const c of coins){if(!c.g&&Math.abs(c.x-(P.x+12))<22&&Math.abs(c.y-(P.y+22))<32){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a');snd('coin')}}
  pops.forEach(p=>{p.y-=.8;p.l--});pops=pops.filter(p=>p.l>0);
+ shd.forEach(q=>{q.vy+=.24;q.x+=q.vx;q.y+=q.vy;q.r+=.1;q.l--});shd=shd.filter(q=>q.l>0);
  shake*=.8;
 if(Math.abs(P.x+12-L.fin[0])<45&&Math.abs(P.y+P.h-L.fin[1])<80&&(!L.fin[2]||finOpen)){state='win';winT=0;snd('win');if(score>(best[li]||0))best[li]=score;if(done.indexOf(li)<0)done.push(li);bank+=score;save()} // выигрыш уходит в банк
   cam+=(Math.max(0,Math.min(W-800,P.x-300))-cam)*.16; // камера догоняет плавно, без рывков на краях
@@ -116,24 +119,32 @@ const CTW=1600,CTH=620,CBY=560;
 let city=[];
 function nrand(seed){let s=(seed>>>0)||1;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296)}
 function buildCity(){
- city=[.12,.28,.5].map((f,k)=>{
+ // тон корпуса берём из своего цвета уровня: так задник у всех 12 разный без палитры вручную. kind — силуэт: 0 плоский, 1 трубы, 2 шпили, 3 террасы
+ const K=li%4,sk=L.sky[0];
+ city=[.05,.11,.2].map((f,k)=>{ // параллакс замедлен втрое: на .12/.28/.5 задник уезжал быстрее героя и путал, где он, а где стена
   const c=document.createElement('canvas');c.width=CTW;c.height=CTH;const x=c.getContext('2d'),R=nrand(li*7919+k*131+17);
-  const tone=['#4b3a72','#33255a','#1b1233'][k];let px=-60;
+  const tone=[shade(sk,.5),shade(sk,.34),shade(sk,.2)][k],lit=L.sky[1],glow=K>1?lit:'#ffd98a';let px=-60;
   while(px<CTW+60){
    const w=44+R()*96,h=110+R()*(k?300:220),y=CBY-h;
    x.fillStyle=tone;x.fillRect(px,y,w,h); // корпус
    x.fillStyle='#00000038';x.fillRect(px+w*.68,y,w*.32,h); // теневая сторона
    x.fillStyle=tone;x.fillRect(px-6,y-9,w+12,10); // карниз
-   if(k==2&&R()<.5)x.fillRect(px+w*.4,y-28,4,28); // антенна
-   if(k&&R()<.35){x.fillRect(px+w*.2,y-20,17,20);x.fillRect(px+w*.2-3,y-24,23,5)} // бак на крыше
+   if(K==2){x.fillStyle=tone;x.beginPath();x.moveTo(px-6,y-9);x.lineTo(px+w/2,y-26-R()*22);x.lineTo(px+w+6,y-9);x.closePath();x.fill()} // шпиль
+   else if(K==1){x.fillStyle=tone;x.fillRect(px+w*.32,y-30-R()*24,9,32);x.fillRect(px+w*.32-5,y-36,19,7)} // труба с колпаком
+   else if(K==3&&R()<.6){x.fillStyle=tone;x.fillRect(px-4,y-16,w+8,7);x.fillRect(px+w*.2,y-28,w*.6,7)} // ступенчатая терраса
+   else if(K==0&&R()<.4)x.fillRect(px+w*.4,y-20,4,20); // антенна
+   if(k){x.fillStyle=shade(sk,.62);x.fillRect(px+w*.2,y-20,17,20);x.fillRect(px+w*.2-3,y-24,23,5)} // бак на крыше
    if(k)for(let wy=y+15;wy<CBY-12;wy+=17)for(let wx=px+7;wx<px+w-9;wx+=14)if(R()<.38){ // окна
-    x.fillStyle=R()<.1?'#ff8fc0':'#ffd98a';x.fillRect(wx,wy,7,8)}
-   if(k==2&&R()<.22){x.fillStyle=R()<.5?'#5ce1e6':'#ff5c8a';x.fillRect(px+w*.3,y+34,24,11)} // вывеска
+    x.fillStyle=R()<.14?lit:glow;x.fillRect(wx,wy,7,8)}
+   if(k==2&&R()<.22){x.fillStyle=R()<.5?lit:shade(sk,.7);x.fillRect(px+w*.3,y+34,24,11)} // вывеска
    px+=w+6+R()*26}
-  const g=x.createLinearGradient(0,CBY-170,0,CBY);g.addColorStop(0,'rgba(18,10,34,0)');g.addColorStop(1,'rgba(18,10,34,.8)');
+  const g=x.createLinearGradient(0,CBY-170,0,CBY);g.addColorStop(0,'rgba(18,10,34,0)');g.addColorStop(1,shade(sk,.12)+'d0');
   x.fillStyle=g;x.fillRect(0,CBY-170,CTW,170); // дымка у основания
   return{c,f}});
 }
+function shade(hex,f){ // затемнить/осветлить свой цвет уровня на коэффициент f — один хелпер вместо палитры на 12 тем
+ const n=parseInt(hex.slice(1),16),r=n>>16&255,gg=n>>8&255,b=n&255;
+ return'#'+[r,gg,b].map(v=>Math.max(0,Math.min(255,Math.round(v*f))).toString(16).padStart(2,'0')).join('')}
 function skyCity(){
  const mx=650-cam*.03,my=88+Math.min(camY*.04,40),mg=g.createRadialGradient(mx,my,2,mx,my,58);
  mg.addColorStop(0,'#fff6dc');mg.addColorStop(.22,'#ffe7aeaa');mg.addColorStop(1,'#ffe7ae00');

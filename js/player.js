@@ -2,7 +2,7 @@ function girl(){
   rnS+=((Math.abs(P.vx)>RUNV&&P.on?1:0)-rnS)*.28; // поза бега догоняет порог, а не щёлкает 0<->1 на нём
  const x=P.x,f=P.f,run=rnS,ph=t*.5; // инерция гасит vx долго — рисуем бег только когда реально бежим
  let y=P.y;
- if(P.inv>0&&(t>>2)%2)return;
+ if(P.inv>0&&shieldT<=0&&(t>>2)%2)return; // мигание неуязвимости полностью прятало героя, и на щите (inv=90) он мог исчезнуть совсем
  y-=Math.abs(Math.sin(ph))*2*run;
  lndS+=((P.lnd>0?1:0)-lndS)*.34; // squash набегает и сходит плавно: срезка по P.lnd прыгала на 0.98 в последний кадр
  const S='#f2c6a0',K='#1c1526',flip=P.jp>0&&!P.on,land=lndS;

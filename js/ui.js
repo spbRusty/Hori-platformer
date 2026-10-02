@@ -1,11 +1,13 @@
 const mapEl=document.getElementById('map');
 const pathEl=document.getElementById('path');
+const statEl=document.getElementById('статы');
 
 function toMap(){
  state='map';
  document.body.classList.add('menu');
  mapEl.style.display='flex';
  pathEl.textContent='';
+ statEl.innerHTML='<span>пройдено '+done.length+'/'+LV.length+'</span><span>банк '+bank+' ₽</span><span>щит ×'+shield+'</span><span>рекорд '+Math.max(0,...best)+' ₽</span>';
  const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');
  sv.setAttribute('viewBox','0 0 100 100');
  sv.setAttribute('preserveAspectRatio','none');

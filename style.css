@@ -32,6 +32,8 @@ canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#
 #map{display:none;position:fixed;inset:0;z-index:9;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px 12px;overflow:auto;text-align:center}
 #map h1{margin:0;font-size:clamp(19px,5.5vw,32px);letter-spacing:.12em;color:var(--fg)}
 #map p{margin:0;font-size:13px;opacity:.6}
+#статы{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:11px}
+#статы span{padding:4px 12px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff26;font-size:clamp(10px,2.4vw,13px);white-space:nowrap}
 #path{position:relative;width:100%;max-width:560px;height:min(56vh,330px)}
 #path svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #path line{stroke:#4a3775;stroke-width:2;vector-effect:non-scaling-stroke}
