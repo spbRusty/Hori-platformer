@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Стрим-платформер</title>
+<title>Валя против хейтеров</title>
 <style>
 :root{--bg:#1a1326;--fg:#f3e9ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none}
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg)}
-canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#2b1d45;border-radius:10px}
-#игр{width:100%;max-width:900px;display:flex;justify-content:center;position:relative}
+canvas{width:100%;max-width:1000px;max-height:calc(100vh - 92px);aspect-ratio:16/9;background:#2b1d45;border-radius:10px}
+#игр{width:100%;max-width:1000px;display:flex;justify-content:center;position:relative}
+@media (hover:hover) and (pointer:fine){body{padding-bottom:0}#pad{display:none}canvas{max-height:100vh;border-radius:0}} /* на мыши канвас во всю страницу, а тач-пады не занимают место */
 #игр:fullscreen,#игр:-webkit-full-screen{width:100%;height:100%;max-width:none;background:#000}
 #игр:fullscreen canvas,#игр:-webkit-full-screen canvas{max-width:none;max-height:none;width:100%;height:100%;object-fit:contain;border-radius:0}
 #гайд{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;
@@ -34,27 +35,32 @@ canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#
  #гром i{width:8px;border-radius:3px;background:#4a3775;transition:background .12s,box-shadow .12s}
 #гром i.on{background:#5ce1e6;box-shadow:0 0 9px #5ce1e6aa}
 #гром s{font:700 15px system-ui;color:#e6dcff;text-decoration:none;opacity:.55;padding-bottom:2px}
-#map{display:none;position:fixed;inset:0;z-index:9;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px 12px;overflow:auto;text-align:center}
-#map h1{margin:0;font-size:clamp(19px,5.5vw,32px);letter-spacing:.12em;color:var(--fg)}
-#map p{margin:0;font-size:13px;opacity:.6}
-#path{position:relative;width:100%;max-width:560px;height:min(56vh,330px)}
+#map{display:none;position:fixed;inset:0;z-index:9;background:radial-gradient(130% 100% at 50% -10%,#3a2160 0%,#1b1030 48%,#0a0516 100%);flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:18px 12px;overflow:auto;text-align:center}
+#map::before{content:'';position:absolute;inset:0;background-image:linear-gradient(#ffffff09 1px,transparent 1px),linear-gradient(90deg,#ffffff09 1px,transparent 1px);background-size:36px 36px;mask-image:radial-gradient(70% 60% at 50% 40%,#000,transparent);pointer-events:none}
+#шапка{position:relative;z-index:1}
+#map h1{margin:0;font-size:clamp(21px,6vw,42px);letter-spacing:.05em;line-height:1.06;background:linear-gradient(94deg,#ffd54a,#ff5c8a 46%,#5ce1e6);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 18px #ff2d5544)}
+#map .под{margin:7px 0 0;font-size:clamp(11px,2.7vw,14px);opacity:.7;letter-spacing:.04em}
+#статы{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:11px}
+#статы span{padding:4px 12px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff26;font-size:clamp(10px,2.4vw,13px);white-space:nowrap}
+#советы{position:relative;z-index:1;max-width:660px}
+#советы p{margin:4px 0;font-size:clamp(10px,2.3vw,12.5px);line-height:1.45;opacity:.55}
+#path{position:relative;width:100%;max-width:620px;height:min(52vh,330px);z-index:1}
 #path svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-#path line{stroke:#4a3775;stroke-width:2;vector-effect:non-scaling-stroke}
-#path line.on{stroke:#ffd54a}
-#path button{position:absolute;transform:translate(-50%,-50%);width:clamp(54px,16vw,80px);min-height:44px;padding:5px 2px;border:2px solid #7b5ea7;border-radius:12px;background:#2b1d45;color:var(--fg);font:inherit;display:flex;flex-direction:column;gap:2px;align-items:center;cursor:pointer}
-#path button b{font-size:15px;line-height:1;color:#ffd54a}
+#path line{stroke:#4a3775;stroke-width:2;stroke-dasharray:5 7;vector-effect:non-scaling-stroke}
+#path line.on{stroke:#ffd54a;stroke-width:2.5;filter:drop-shadow(0 0 5px #ffd54a99)}
+#path button{position:absolute;transform:translate(-50%,-50%);width:clamp(58px,17vw,84px);min-height:46px;padding:5px 3px;border:2px solid var(--c,#7b5ea7);border-radius:14px;background:linear-gradient(180deg,#2f1f4c,#1b1133);color:var(--fg);font:inherit;display:flex;flex-direction:column;gap:2px;align-items:center;cursor:pointer;box-shadow:0 5px 14px #00000073}
 #path button span{font-size:clamp(9px,2.6vw,12px);line-height:1.1;overflow-wrap:anywhere}
 #path button i{font-style:normal;font-size:10px;line-height:1;opacity:.7}
 #path button:not([disabled]):active{background:#5a3a6e}
-#path button.sel{border-color:#5ce1e6;box-shadow:0 0 0 3px #5ce1e666}
+#path button.sel{border-color:#5ce1e6;box-shadow:0 0 0 3px #5ce1e655,0 0 24px #5ce1e6aa;transform:translate(-50%,-50%) scale(1.12)}
 #path button u{position:absolute;top:-8px;right:-6px;width:17px;height:17px;border-radius:50%;background:#22c97e;color:#04231a;font:700 11px/17px system-ui;text-decoration:none}
-#path button[disabled]{border-color:#4a3775;background:#1a1326;opacity:.4;cursor:not-allowed}
+#path button[disabled]{border-color:#4a3775;background:#150e26;opacity:.42;cursor:not-allowed;box-shadow:none}
 body.menu #pad,body.menu small,body.menu canvas,body.menu #fs,body.menu #гайд{visibility:hidden}
 </style></head><body>
 <div id="игр"><canvas id="c" width="800" height="450"></canvas>
   <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span></div>
   <div id="гром"><i></i><i></i><i></i><i></i><i></i><s>−</s><s>+</s></div>
- <div id="map"><h1>СТРИМ-ПЛАТФОРМЕР</h1><div id="path"></div><p>← → ходить · Пробел/↑ прыжок (можно дважды) · меч бьёт сам · C щит · F полный экран · N музыка · ⇧N громкость · M звук</p><p id=совет>← → выбрать уровень · Enter начать</p><p>Меч зажат всегда и бьёт только вперёд: за спиной Валя уязвима — разворачивайся.</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты от фраз</p><p>В финале живёт 👑 Директор: пока он замахивается — неуязвим, бей после залпа. Сбей его — откроются врата стрима.</p></div>
+ <div id="map"><div id="шапка"><h1>ВАЛЯ ПРОТИВ ХЕЙТЕРОВ</h1><p class="под">двенадцать этажей стрима: бей словами, собирай донаты, не разоряйся</p><div id="статы"></div></div><div id="path"></div><div id="советы"><p>← → выбрать уровень · Enter начать · Esc назад</p><p>Меч зажат всегда и бьёт только вперёд: за спиной Валя уязвима — разворачивайся.</p><p>Каждая собранная монета делает хейтеров быстрее и злее. Смерть сжигает половину банка.</p><p>Щит (C или 🛡) — 100 ₽ за три защиты: гасит урон и съедает фразу.</p><p>👑 Директор ждёт в финале: пока замахивается — неуязвим, бей после залпа. Сбей — откроются врата стрима.</p></div></div>
  <div id="кнопки"><button id="муз" aria-label="Музыка">♪</button><button id="fs" aria-label="Полный экран">⛶</button></div></div>
 <div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyC">🛡</button><button data-k="Space">⤒</button></div></div>
 <script>
@@ -166,54 +172,90 @@ function musTick(){if(!AC)return;const spb=60/112/4; // 112 BPM, шестнад�
  if(mus.next<AC.currentTime)mus.next=AC.currentTime}
 addEventListener('pointerdown',()=>{audio();if(AC&&AC.state=='suspended')AC.resume()});
 document.getElementById('муз').onclick=()=>{audio();musBtn()}; // кнопка отключения музыки
-const LV=[ // w,h,gy,sky,fin,sp?,p[0]=земля,f=[x,y,патруль,vx],s=[стена x,y,w,h],a=[стрелка x,y,напр] Разрывы 150-170 и ступени 70-100 — двойной прыжок обязателен
- {n:'Пролог',w:3200,h:560,gy:500,sky:['#3a2466','#a04b8f'],fin:[3060,500],
-   p:[[0,500,3200,60],[300,430,130],[570,380,140],[850,440,120],[1130,370,150],[1450,430,130],[1730,360,150],[2030,420,130],[2330,350,150],[2650,410,130],[2900,350,150]],
-   s:[[520,456,26,44],[1310,456,26,44],[2060,456,26,44],[2860,456,26,44]],
-   a:[[200,500,1],[360,500,0],[600,380,1],[880,440,1],[1160,370,1],[1480,430,1]],
-   f:[[760,466,90,1],[1650,466,90,1.2],[2600,466,90,1]]},
- {n:'Стрим',w:3600,h:560,gy:500,sky:['#2b2350','#8e4a7d'],fin:[3450,500],
-   p:[[0,500,3600,60],[280,440,130],[560,360,130],[840,440,130],[1120,360,130],[1400,430,130],[1680,350,130],[1960,420,130],[2240,340,130],[2520,410,130],[2800,330,130],[3080,400,120],[3320,350,120]],
-   s:[[420,456,26,44],[2050,456,26,44],[2750,456,26,44]],
-   a:[[200,500,1],[360,500,0],[590,360,1],[870,440,1],[1150,360,1],[1430,430,1],[1710,350,1],[1990,420,1]],
-   f:[[700,466,100,1.4],[1500,466,100,1.6],[2400,466,100,1.4],[3000,466,100,1.7],[3140,366,50,1.3]]},
- {n:'Скалолаз',w:820,h:1300,gy:1240,sky:['#1f3a5c','#6f8fc9'],fin:[560,120],
-   p:[[0,1240,820,60],[60,1170,200],[450,1100,200],[60,1030,200],[450,960,200],[60,890,200],[450,820,200],[60,750,200],[450,680,200],[60,610,200],[450,540,200],[60,470,200],[450,400,200],[60,330,200],[450,260,200],[60,190,200],[450,120,200]],
-   a:[[150,1170,1],[540,960,-1],[150,750,1],[540,540,-1],[150,330,1],[540,120,-1]],
-   f:[[300,1206,90,1.3],[600,926,45,1.5]]},
- {n:'Хайп',w:3800,h:560,gy:500,sky:['#402a5e','#c24f7a'],fin:[3650,500],
-   p:[[0,500,3800,60],[260,450,130],[540,370,130],[820,450,130],[1100,360,130],[1380,450,130],[1660,350,130],[1940,440,130],[2220,340,130],[2500,430,130],[2780,330,130],[3060,420,130],[3340,320,130],[3560,430,120]],
-   s:[[950,456,26,44],[1800,456,26,44],[2900,456,26,44],[3500,456,26,44]],
-   a:[[200,500,1],[320,500,0],[570,370,1],[850,450,1],[1130,360,1],[1690,350,1],[1970,440,1],[2250,340,1],[2550,430,1],[2810,330,1],[3100,420,1],[3370,320,1]],
-   f:[[700,466,90,1.5],[1400,466,90,1.7],[2400,466,90,1.5],[3300,466,90,1.8],[1160,326,50,1.3],[1990,406,50,1.2],[2280,306,50,1.4]]},
- {n:'Глубина',w:760,h:1500,gy:1440,sky:['#12333a','#2f9c9c'],sp:[40,386],fin:[660,1440],
-   p:[[0,1440,760,60],[0,430,260],[410,520,240],[60,610,240],[470,700,240],[60,790,240],[470,880,240],[60,970,240],[470,1060,240],[60,1150,240],[470,1240,240],[170,1330,240]],
-   a:[[130,430,1],[530,520,-1],[180,790,1],[590,880,-1],[180,1150,1],[290,1330,1]],
-   f:[[560,1406,70,1.2],[560,1206,60,1.4]]},
- {n:'Бонус',w:1800,h:520,gy:460,sky:['#4a2a5e','#c1418f'],fin:[1650,460],
-   p:[[0,460,1800,60],[200,390,130],[500,300,130],[800,215,130],[1100,300,130],[1400,200,130]],
-   s:[[250,416,26,44],[750,416,26,44],[1250,416,26,44]],
-   a:[[120,460,1],[300,460,0],[530,300,1],[830,215,1],[1130,300,1],[1430,200,1]],
-   f:[[500,426,50,1.6],[1000,426,50,1.8],[1500,426,50,2]]},
-  {n:'Финал',w:4600,h:1400,gy:1340,sky:['#1a0f1e','#c02a2a'],sp:[60,1226],fin:[4460,1340,1], // третий флаг fin — врата закрыты, пока жив босс
-   bs:[1230,1156],
-   p:[[0,1340,4600,60],[0,1270,240],[330,1200,120],[560,1270,120],[790,1200,120],[1020,1270,120],[1250,1200,120],[1480,1270,120],[1700,1180,120],
-      [1880,1110,200],[2250,1040,200],[1880,970,200],[2250,900,200],[1880,830,200],[2250,760,200],[1880,690,200],[2250,620,200],[1880,550,200],[2250,480,200],
-      [2620,570,200],[2990,660,200],[3360,750,200],[3730,840,200],[4100,930,200]],
-   s:[[950,1296,26,44],[2700,1296,26,44],[3800,1296,26,44]],
-    a:[[200,1270,1],[400,1200,1],[630,1270,1],[1180,1340,1],[1800,1180,1],[2330,1040,-1],[2330,760,-1],[2700,570,1],[3440,750,1],[4180,930,1],[4300,1340,1]],
-   f:[[600,1306,80,1.8],[1400,1306,80,2],[1980,936,60,1.4],[1980,516,60,1.5],[2350,586,60,1.6],[3460,716,60,1.7],[4300,1306,80,2.1]]}];
-const EDG=[[0,1],[0,2],[1,3],[2,3],[3,4],[3,5],[4,6],[5,6]]; // ветки карты
+const rw=(y,x0,st,w,n)=>{const a=[];for(let i=0;i<n;i++)a.push([x0+i*st,y,w,60]);return a}; // ряд площадок: y, старт x, шаг, ширина, сколько. Высота 60 обязательна: без неё rr() получает null и площадка не рисуется
+const gr=(x0,w,n,st,gy)=>{const a=[];for(let i=0;i<n;i++)a.push([x0+i*(w+st),gy,w,60]);return a}; // земля с провалами
+const sh=(n,y0,st,x0=40)=>{const a=[];for(let i=0;i<n;i++)a.push([x0+(i%2?380:0),y0-i*st,380,60]);return a}; // две колонки шахты; st<0 — вниз
+const LV=[ // w,h,gy,sky,fin,sp?,p[0]=земля,f=[x,y,патруль,vx],s=[стена x,y,w,h],a=[стрелка x,y,напр],c=[монета x,y,цена],nf=1 — без автозаполнения. Разрывы 140-170 и ступени до 110: двойной прыжок обязателен
+ {n:'Разгон',w:9600,h:560,gy:500,sky:['#3a2466','#c9708f'],fin:[9460,500],
+  p:[[0,500,9600,60],...rw(430,340,280,140,32),...rw(355,480,280,85,31)],
+  s:[[900,456,26,44],[2400,456,26,44],[4100,456,26,44],[5400,456,26,44]],
+  a:[[200,500,1],[360,430,1],[620,430,1]],
+  f:[[760,466,90,1],[1900,466,90,1.2],[3300,466,90,1],[4700,466,90,1.1]]},
+ {n:'Пропасти',w:8200,h:1000,gy:920,sky:['#1b2a52','#6f8fc9'],sp:[40,876],fin:[8060,880],
+  p:[[0,920,340,60],...rw(900,440,230,130,33),...rw(800,580,230,110,21),...rw(700,720,230,110,17)],
+  a:[[200,920,1],[520,900,1],[700,800,1],[840,700,1]],
+  f:[[760,866,50,1.4],[1400,866,50,1.6],[2100,866,50,1.5],[2800,866,50,1.7],[3500,866,50,1.6],[4200,866,50,1.8],[4900,866,50,1.7],[5600,866,50,1.9],
+     [900,766,40,1.3],[1800,766,40,1.5],[2700,766,40,1.4],[1100,666,40,1.6]]},
+ {n:'Мясо',w:9200,h:560,gy:500,sky:['#4a2a5e','#e0559b'],fin:[9060,500],
+  p:[[0,500,9200,60],...rw(430,300,270,150,33),...rw(360,440,270,140,32)],
+  s:[[1500,456,26,44],[3000,456,26,44],[4300,456,26,44]],
+  a:[[300,500,1],[500,430,1]],
+  f:[[1150,466,130,1.7],[1250,466,130,1.8],[1350,466,130,1.9],[1450,466,130,1.7],[1550,466,130,2],[1650,466,130,1.8],[1750,466,130,1.9],[1850,466,130,1.7],[1950,466,130,1.8],
+     [700,396,70,1.6],[1000,396,70,1.7],[2500,396,70,1.6],[2800,396,70,1.8]]},
+ {n:'Развилка',w:9800,h:1200,gy:1100,sky:['#2c3f6b','#8fb6e6'],fin:[9660,1100],
+  p:[[0,1100,9800,60],...rw(880,700,270,110,34),...rw(770,1000,270,100,32)],
+  s:[[1500,1056,26,44],[3100,1056,26,44],[4700,1056,26,44]],
+  a:[[300,1100,1],[760,880,1]],
+  c:[[820,850,100],[1420,850,150],[2020,850,100],[2620,850,150],[3220,850,100],[3820,850,150],[4420,850,100],[5020,850,150],[5620,850,100],[6220,850,100],[6820,850,150],[7420,850,100],[8020,850,150],[8620,850,100]],
+  f:[[900,846,80,1.5],[2000,846,80,1.6],[3200,846,80,1.5],[4400,846,80,1.7],[5400,846,80,1.6]]},
+ {n:'Деньги',w:8900,h:1000,gy:920,sky:['#5a2a4e','#ff8a5c'],fin:[8700,920],
+  p:[...gr(0,600,12,140,920)],
+  a:[[300,920,1],[1000,920,1]],
+  c:[[670,790,150],[1410,790,100],[2150,790,150],[2890,790,100],[3630,790,150],[4370,790,100],[5110,790,150],[5850,790,100],[6590,790,150],[7330,790,100],[8070,790,150]],
+  f:[[560,886,40,1.5],[1300,886,40,1.6],[2040,886,40,1.7],[2780,886,40,1.6],[3520,886,40,1.8],[4260,886,40,1.7],[5000,886,40,1.9]]},
+ {n:'Разворот',w:9800,h:560,gy:500,sky:['#3a1f4a','#b04bd0'],fin:[9660,500],
+  p:[[0,500,9800,60],...rw(410,320,280,120,33),...rw(330,470,280,110,32)],
+  s:[[700,430,26,70],[1400,430,26,70],[2100,430,26,70],[2800,430,26,70],[3500,430,26,70],[4200,430,26,70],[4900,430,26,70],[5600,430,26,70],[6300,430,26,70],[7000,430,26,70],[7700,430,26,70],[8400,430,26,70],[9100,430,26,70]],
+  a:[[300,500,1],[900,410,1],[1500,500,-1]],
+  f:[[900,466,220,1.6],[1700,466,220,1.7],[2500,466,220,1.8],[3300,466,220,1.7],[4100,466,220,1.9],[4900,466,220,1.8],[5700,466,220,2]]},
+ {n:'Вертикаль',w:1860,h:3000,gy:2940,sky:['#12283a','#4f8fa8'],sp:[40,396],fin:[1480,331],nf:1,
+  p:[...sh(26,440,-90),[40,2940,1820,60],...sh(30,2830,85,1100)],
+  a:[[120,440,1],[1130,2830,1]],
+  f:[[450,496,50,1.6],[70,946,50,1.7],[450,1396,50,1.8],[70,1686,50,1.7],[450,2306,50,1.8],[70,2566,50,1.7],
+     [1130,2626,50,1.5],[1510,2391,50,1.6],[1130,2136,50,1.7],[1510,1881,50,1.6],[1130,1626,50,1.8],[1510,1371,50,1.7],
+     [1130,1116,50,1.9],[1510,861,50,1.8],[1130,606,50,1.7],[1510,501,50,1.8]]},
+ {n:'Жадность',w:9200,h:1000,gy:920,sky:['#2a1440','#ffd54a'],fin:[9000,920],
+  p:[...gr(0,560,14,130,920),...rw(700,240,270,110,26)],
+  a:[[300,920,1],[400,700,1]],
+  c:[[625,790,150],[1315,790,100],[2005,790,150],[2695,790,100],[3385,790,150],[4075,790,100],[4765,790,150],[5455,790,100],[6145,790,150],[6835,790,100],
+     [350,670,150],[890,670,100],[1430,670,150],[1970,670,100],[2510,670,150],[3050,670,100],[3590,670,150],[4130,670,100],[4670,670,150],[5210,670,100],[5750,670,150],[6290,670,100]],
+  f:[[520,886,40,1.6],[1210,886,40,1.7],[1900,886,40,1.8],[2590,886,40,1.7],[3280,886,40,1.9],[3970,886,40,1.8],[4660,886,40,2],[5350,886,40,1.9],
+     [450,666,60,1.5],[990,666,60,1.7],[1530,666,60,1.6],[2070,666,60,1.8],[2610,666,60,1.7],[3150,666,60,1.9],[3690,666,60,1.8],[4230,666,60,2]]},
+ {n:'Щит',w:9200,h:560,gy:500,sky:['#3a2a10','#c9a227'],fin:[9060,500],
+  p:[[0,500,9200,60],...rw(430,320,260,120,34)],
+  s:[[900,440,40,60],[1800,440,40,60],[2700,440,40,60],[3600,440,40,60],[4500,440,40,60],[5400,440,40,60],[6300,440,40,60],[7200,440,40,60],[8100,440,40,60],[9000,440,40,60]],
+  a:[[300,500,1],[700,430,1]],
+  c:[[1100,400,100],[2000,400,100],[2900,400,100],[3800,400,100],[4700,400,100],[5600,400,100],[6500,400,100],[7400,400,100],[8300,400,100]],
+  f:[[700,466,120,1.6],[1600,466,120,1.7],[2500,466,120,1.8],[3400,466,120,1.7],[4300,466,120,1.9],[5100,466,120,1.8],
+     [1100,396,60,1.5],[2200,396,60,1.6],[3300,396,60,1.7],[4400,396,60,1.8]]},
+ {n:'Комбо',w:9400,h:1400,gy:1300,sky:['#241040','#7b5ea7'],fin:[9260,1300],
+  p:[...gr(0,900,9,140,1300),...rw(1200,300,270,130,10),...rw(1100,700,270,120,10),...rw(1000,1100,270,120,9),...rw(900,1500,270,120,9)],
+  a:[[300,1300,1],[400,1200,1],[1100,1000,1]],
+  c:[[970,1270,100],[2010,1270,150],[3050,1270,100],[4090,1270,150],[5130,1270,100],[6170,1270,150],[7210,1270,100],[8250,1270,150],
+     [450,1170,100],[990,1070,150],[1530,970,100],[2070,870,150],[1500,1070,100],[2040,970,150]],
+  f:[[600,1266,80,1.6],[1600,1266,80,1.7],[2600,1266,80,1.8],[3600,1266,80,1.7],[4600,1266,80,1.9],[5600,1266,80,1.8],[6600,1266,80,2],
+     [500,1166,60,1.5],[1000,1066,60,1.6],[1500,966,60,1.7],[2000,866,60,1.8]]},
+ {n:'Спринт',w:8800,h:560,gy:500,sky:['#7a1f3a','#ff9f5c'],fin:[8660,500],
+  p:[[0,500,8800,60],...rw(430,260,240,130,35),...rw(355,400,240,120,35)],
+  a:[[300,500,1]],
+  c:[[565,400,50],[1045,400,50],[1525,400,50],[2005,400,50],[2485,400,50],[2965,400,50],[3445,400,50],[3925,400,50],[4405,400,50],[4885,400,50],[5365,400,50],[5845,400,50],[6325,400,50],[6805,400,50],[7285,400,50],[7765,400,50],[8245,400,50]],
+  f:[[600,466,80,1.7],[1400,466,80,1.8],[2200,466,80,1.9],[3000,466,80,2],[800,396,60,1.6],[1600,396,60,1.7],[2400,396,60,1.8]]},
+ {n:'Директор',w:9400,h:1400,gy:1300,sky:['#1a0b1e','#c02a2a'],sp:[60,1256],fin:[9260,1300,1],bs:[1300,1116],
+  p:[[0,1300,9400,60],...rw(1200,4400,270,140,17),...rw(1100,4700,270,130,16),...rw(1000,5000,270,130,15)],
+  a:[[300,1300,1],[2700,1200,1]],
+  c:[[4550,1170,100],[5000,1170,100],[5450,1170,150],[4850,1070,150],[5300,1070,100],[5750,1070,150],[5150,970,100],[5600,970,150]],
+  f:[[700,1266,90,1.6],[1000,1266,90,1.7],[2400,1266,100,1.8],[3900,1266,100,1.9],[4600,1266,90,2],[2800,1166,60,1.6],[3400,1016,60,1.7],[4000,866,60,1.8]]}];
+const EDG=[[0,1],[0,2],[1,3],[2,4],[3,5],[3,8],[4,6],[4,7],[5,9],[6,9],[7,10],[8,10],[9,11],[10,11]]; // ветки карты
 const BOSS={x:1230,y:1156,w:220,h:184,hp:30,r:105,st:1}; // 👑 Директор: спавн, прочность, радиус прыжка, ступенька
-const NOD=[[9,50],[28,24],[28,76],[48,50],[68,26],[68,74],[88,50]]; // позиции узлов, %
+const NOD=[[8,50],[22,28],[22,72],[38,28],[38,72],[54,16],[54,46],[54,78],[70,26],[70,56],[86,40],[93,14]]; // позиции узлов, %
 const hats=["кринж","фу","ноль","уйди","лол","скуф","цирк"];
 const say=["куда ты, ссыкло?","не суйся","иди в стрим","ты тут не свой","беги, клоун","слышь, отвали"]; // фразы, когда Валя пробегает мимо
-let P,coins,foes,state,cam,camY,score,t=0,pops,shots,hint=0,taught=0,boss=null,finOpen=0,winT=0;
-let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[0,0,0,0,0,0,0],bank=0,lost=0,AG=1;
+let P,coins,foes,state,cam,camY,score,t=0,pops,shots,shd,hint=0,taught=0,boss=null,finOpen=0,winT=0;
+let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[],bank=0,lost=0,AG=1;
  const SHPRICE=100,SHMAX=3,RUNV=.6,SWING=24; // щит: 100₽ за 3 защиты; порог «бежит» — иначе инерция проигрывает бег на месте; SWING — кадров одного взмаха без пауз
 let shield=0,shieldT=0;
 let swA=1.3,rnS=0,lndS=0; // сглаженные угол меча, поза бега, squash: напрямую они прыгали на 92°/0.25 за кадр
-const mapEl=document.getElementById('map'),pathEl=document.getElementById('path');
+const mapEl=document.getElementById('map'),pathEl=document.getElementById('path'),statEl=document.getElementById('статы');
 try{const d=localStorage.getItem('hori_done'),u=+localStorage.getItem('hori_unlocked');
  if(d!==null)done=d.split(',').map(Number);else if(u>0){for(let i=0;i<=u;i++)done.push(i);localStorage.removeItem('hori_unlocked')}
  best=(localStorage.getItem('hori_best')||'').split(',').map(Number);while(best.length<LV.length)best.push(0)
@@ -222,6 +264,7 @@ function unl(i){return i==0||EDG.some(e=>e[1]==i&&done.indexOf(e[0])>=0)} // у�
 function save(){try{localStorage.setItem('hori_done',done.join(','));localStorage.setItem('hori_best',best.join(','));localStorage.setItem('hori_bank',bank);localStorage.setItem('hori_shield',shield)}catch(e){}}
 function toMap(){
  state='map';document.body.classList.add('menu');mapEl.style.display='flex';pathEl.textContent=''; // фулскрин не выключаем: карта живёт внутри него
+ statEl.innerHTML='<span>пройдено '+done.length+'/'+LV.length+'</span><span>банк '+bank+' ₽</span><span>щит ×'+shield+'</span><span>рекорд '+Math.max(0,...best)+' ₽</span>';
  const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');
  sv.setAttribute('viewBox','0 0 100 100');sv.setAttribute('preserveAspectRatio','none');
  EDG.forEach(e=>{const l=document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -230,8 +273,8 @@ function toMap(){
   pathEl.append(sv);
   mapBtns=[];
   LV.forEach((lv,i)=>{const b=document.createElement('button'),un=unl(i);
-   b.disabled=!un;b.style.left=NOD[i][0]+'%';b.style.top=NOD[i][1]+'%';
-   b.innerHTML='<b>'+(i+1)+'</b><span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':'');
+   b.disabled=!un;b.style.left=NOD[i][0]+'%';b.style.top=NOD[i][1]+'%';b.style.setProperty('--c',lv.sky[1]); // рамка узла — цвет неба своего уровня: карта читается по этажам без номеров
+   b.innerHTML='<span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':'');
    if(un){b.onclick=()=>reset(i);b.onmouseenter=()=>{mapSelI=mapBtns.findIndex(x=>x[0]==i);mapSel(0)};mapBtns.push([i,b]);pathEl.append(b)}});
   const k=mapBtns.findIndex(x=>x[0]==li);mapSelI=k<0?0:k;mapSel(0); // стрелками выбираем уровень, Enter — старт
  }
@@ -240,10 +283,11 @@ function mapSel(d){if(!mapBtns.length)return;mapSelI=(mapSelI+d+mapBtns.length)%
  mapBtns.forEach(([i,b],k)=>b.classList.toggle('sel',k==mapSelI))}
 function reset(i){
  li=i;L=LV[i];W=L.w;GY=L.gy;LH=L.h;
- P={x:60,y:L.sp?L.sp[1]:GY-44,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3,jp:0,lnd:0,kills:0,j:1}; // j — запас двойного прыжка; atk:0 — меч молчит, пока рядом не будет кого бить
- coins=[];foes=[];pops=[];shots=[];score=0;state='play';cam=0;camY=0;shake=0;boss=null;finOpen=0;buildCity();mapEl.style.display='none';document.body.classList.remove('menu');if(wantFs&&!document.fullscreenElement)goFs(1);snd('start');
+ P={x:60,y:L.sp?L.sp[1]:GY-44,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3,jp:0,lnd:0,kills:0,j:1,lx:60,ly:L.sp?L.sp[1]:GY-44}; // j — запас двойного прыжка; atk:0 — меч молчит, пока рядом не будет кого бить; lx/ly — последняя твёрдая точка, оттуда воскрешают после падения
+coins=[];foes=[];pops=[];shots=[];shd=[];score=0;state='play';cam=0;camY=0;shake=0;boss=null;finOpen=0;buildCity();mapEl.style.display='none';document.body.classList.remove('menu');if(wantFs&&!document.fullscreenElement)goFs(1);snd('start');
  L.p.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
- const kd=Math.min(3,li>>1); // тип хейтера растёт с уровнем: 0 нуль, 1 стрелок, 2 залповый, 3 босс
+ (L.c||[]).forEach(c=>coins.push({x:c[0],y:c[1],v:c[2]})); // дорогие монеты из данных уровня: лежат там, где сорваться дорого
+  const kd=Math.min(3,li>>1); // тип хейтера растёт с уровнем: 0 нуль, 1 стрелок, 2 залповый, 3 босс
  AG=1+Math.min(1,bank/1500); // чем богаче Валя, тем злее хейтеры: скорость и частота залпов
  if(AG>=1.25&&!taught){taught=1;hint=260} // один раз за сессию объясняем правило прямо в игре
   let fi=0;
@@ -252,12 +296,12 @@ function reset(i){
    tx:hats[fi%7],sh:-600,k:k==null?kd:k,hp:1+(kd>1)+(kd>2),sr:t+40+(fi*37)%90,vy:0,on:1,pd:0});fi++};
  L.f.forEach(f=>addFoe(f[0],f[1],f[2],f[3]));
  // автозаполнение пустых участков: своей плотностью на уровень, чтобы больших провалов без врага не оставалось
-  const GAP=[340,300,280,260,300,280,240][li]||300,fin=L.fin[0],finy=L.fin[1],spx=L.sp?L.sp[0]:72,spy=L.sp?L.sp[1]:GY;
+  const GAP=[300,290,240,290,270,260,240,250,300,250,200,260][li]||280,fin=L.fin[0],finy=L.fin[1],spx=L.sp?L.sp[0]:72,spy=L.sp?L.sp[1]:GY;
   const wall=(x,y)=>(L.s||[]).some(s=>x+30>s[0]&&x<s[0]+s[2]+46&&y+34>s[1]-46&&y<s[1]+s[3]+46), // сверялся только x: стена в воздухе на y=456 запрещала врага на земле под собой и оставляла дыры
        clash=(x,y)=>foes.some(e=>Math.abs(e.x-x)<110&&Math.abs(e.y-y)<50), // сверялся только x: враг на площадке на 80px выше блокировал ground-слот под собой, и в дыре на 500px не оставалось ни одной легальной точки. 70 вместо 110 превращало уровень в сплошную стену тел
        clear=(x,y)=>!wall(x,y)&&Math.hypot(x-fin,y-finy)>200&&(Math.abs(y-spy)>150||Math.abs(x-spx)>170), // от финиша защищаем по двум осям: на Скалозазе финиш (560,120) наверху, а правая колонка площадок идёт от y=1100 — проверка только по x выкашивала весь ряд
        fits=(x,y)=>clear(x,y)&&!foes.some(e=>Math.abs(e.x-x)<260&&Math.abs(e.y-y)<50);
- L.p.forEach((pl,i)=>{const y=pl[1]-34;
+ if(!L.nf)L.p.forEach((pl,i)=>{const y=pl[1]-34; // nf:1 — уровень с ручной расстановкой (шахта): автозаполнение превращало лестницу в стену из врагов
    if(!i){const lo=Math.max(pl[0]+GAP*.55,spx+190),hi=pl[0]+pl[2]-100,put=x=>addFoe(x,y,Math.min(70,GAP*.22),1.1+(x%7)*.12,Math.max(0,kd-(x%5===0?1:0))),
       fill=(a,b)=>{for(let m=a+40;m<b-40;m+=40)if(clear(m,y)&&!clash(m,y)){put(m);return 1}return 0}; // не середина: середина широкого провала попадала в колонку стены и ремонт выходил, оставляя дыру
      for(let x=lo;x<hi;x+=GAP)if(clear(x,y)&&!clash(x,y))put(x);
@@ -267,11 +311,14 @@ function reset(i){
        for(const v of xs){if(v-pr>GAP)n+=fill(pr,v);if(v>pr)pr=v}
        if(hi-pr>GAP)n+=fill(pr,hi);
        if(!n)break}}
-   else if(pl[2]>=90){const x=pl[0]+pl[2]/2; // на каждой площадке шире 90 — свой хейтер. Откат к 130 давал +8 пустых площадок на Финале и не менял проходимость: она валится на вертикальных уровнях из-за бота, а не из-за плотности (кривая 6..37 врагов = 0/5 всюду)
+   else if(pl[2]>=90){const x=pl[0]+pl[2]/2; // на каждой площадке шире 90 — свой хейтер. Узкие (85/70) намеренно остаются без врага: иначе маршрут из узких площадок превращается в непроходимый
    if(fits(x,y))addFoe(x,y,Math.min(70,pl[2]/2-25),1.1+(x%5)*.14,Math.max(0,kd-(x%4===0?1:0)))}});
   if(L.bs){boss={x:L.bs[0],y:L.bs[1],y0:L.bs[1],w:BOSS.w,h:BOSS.h,vx:2.2*AG,sx:0,d:-1,dg:0,ch:0,x0:340,x1:2140,tx:'директор',tq:0,sp:60,sh:-600,k:5,hp:BOSS.hp,bs:BOSS.hp,sr:t+50,vy:0,on:1,hi:0,ht:0};foes.push(boss)}
  }
 function pop(x,y,s,c){pops.push({x,y,s,c,l:50})}
+function shatter(x,y,s){ // убитая фраза не исчезает, а рассыпается на буквы: каждая летит в свою сторону и крутится
+ for(let i=0;i<s.length;i++){const a=-1.9+(Math.random()-.5)*2.4,v=1.4+Math.random()*2.6;
+  shd.push({x:x+(i-s.length/2)*7.5,y:y+(Math.random()-.5)*9,c:s[i],vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:(Math.random()-.5)*.5,l:46+(Math.random()*16|0)})}}
 function hurt(){if(P.inv>0)return; // защита в общей точке урона: иначе залп фраз снимает все 3 жизни за один кадр
  P.hp--;P.inv=150;P.vy=-7;snd('hurt');if(P.hp<=0){state='lose';lost=bank-Math.round(bank/2);bank=Math.round(bank/2);save();snd('lose')}} // проиграл — сгорела половина банка
 function shKey(){ // щит тратит заряд: гасит любой урон (фраза или контакт) на 90 кадров
@@ -311,6 +358,8 @@ function update(){
  P.inv--;shieldT=Math.max(0,shieldT-1);P.jp=Math.max(0,P.jp-1);P.lnd=Math.max(0,P.lnd-1);
  P.x=Math.max(0,Math.min(W-P.w,P.x+P.vx));blockX(P);
  const py=P.y;P.vy+=.65;P.y+=P.vy;solid(P,py);
+  if(P.on){P.lx=P.x;P.ly=P.y} // запомнили твёрдую точку — воскрешаем здесь, а не на старте
+   if(P.y>LH+30){hurt();P.x=P.lx;P.y=P.ly;P.vx=P.vy=0;P.on=1;P.j=1;shake=9;pops.push({x:P.x+12,y:P.y-12,s:'провал!',st:1,c:'#ff5c8a',rot:(Math.random()-.5)*.4,l:44})} // улетела в пропасть: минус жизнь и возврат на последнюю площадку
   if(Math.abs(P.vx)>RUNV&&P.on&&Math.random()<.15)pops.push({x:P.x+3,y:P.y+42,s:'',c:'#e8dcff',l:22,d:1});
  // sword hitbox
  const hb=P.atk>0?{x:P.f>0?P.x+P.w:P.x-50,y:P.y-4,w:50,h:P.h}:null;
@@ -382,12 +431,13 @@ else if(P.x-e.x>130&&t-e.sh>420){e.sh=t;shoot(e);snd('swing')} // Валя об�
   if(s.l<=0)continue;
 if(hb&&hit(hb,{x:s.x-30,y:s.y-11,w:60,h:22})){ // слипшиеся фразы гасим одним взмахом: залп сходится в точку, иначе попап и звук дублируются
    shots.forEach(q=>{if(q!==s&&q.l>0&&Math.abs(q.x-s.x)<46&&Math.abs(q.y-s.y)<30)q.l=0});
-   s.l=0;score+=10;pops.push({x:s.x,y:s.y,s:s.s,st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.4,l:44});shake=3;snd('ph')}
+   s.l=0;score+=10;shatter(s.x,s.y,s.s);shake=3;snd('ph')}
    else if(shieldT>0&&Math.abs(s.x-P.x-12)<36&&Math.abs(s.y-P.y-22)<22){s.l=0;pops.push({x:s.x,y:s.y,s:'съедено щитом',st:1,c:'#5ce1e6',rot:0,l:40})} // щит не отбивает, а съедает фразу
    else if(P.inv<=0&&Math.abs(s.x-P.x-12)<36&&Math.abs(s.y-P.y-22)<22){s.l=0;P.x-=Math.sign(s.vx)*20;hurt();pops.push({x:s.x,y:s.y,s:s.s,st:1,c:'#ff5c8a',rot:(Math.random()-.5)*.3,l:40})}}
  shots=shots.filter(s=>s.l>0);
  for(const c of coins){if(!c.g&&Math.abs(c.x-(P.x+12))<22&&Math.abs(c.y-(P.y+22))<32){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a');snd('coin')}}
  pops.forEach(p=>{p.y-=.8;p.l--});pops=pops.filter(p=>p.l>0);
+  shd.forEach(q=>{q.vy+=.24;q.x+=q.vx;q.y+=q.vy;q.r+=.1;q.l--});shd=shd.filter(q=>q.l>0);
  shake*=.8;
 if(Math.abs(P.x+12-L.fin[0])<45&&Math.abs(P.y+P.h-L.fin[1])<80&&(!L.fin[2]||finOpen)){state='win';winT=0;snd('win');if(score>(best[li]||0))best[li]=score;if(done.indexOf(li)<0)done.push(li);bank+=score;save()} // выигрыш уходит в банк
   cam+=(Math.max(0,Math.min(W-800,P.x-300))-cam)*.16; // камера догоняет плавно, без рывков на краях
@@ -399,24 +449,32 @@ const CTW=1600,CTH=620,CBY=560;
 let city=[];
 function nrand(seed){let s=(seed>>>0)||1;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296)}
 function buildCity(){
- city=[.12,.28,.5].map((f,k)=>{
+ // тон корпуса берём из своего цвета уровня: так задник у всех 12 разный без палитры вручную. kind — силуэт: 0 плоский, 1 трубы, 2 шпили, 3 террасы
+ const K=li%4,sk=L.sky[0];
+ city=[.05,.11,.2].map((f,k)=>{ // параллакс замедлен втрое: на .12/.28/.5 задник уезжал быстрее героя и путал, где он, а где стена
   const c=document.createElement('canvas');c.width=CTW;c.height=CTH;const x=c.getContext('2d'),R=nrand(li*7919+k*131+17);
-  const tone=['#4b3a72','#33255a','#1b1233'][k];let px=-60;
+  const tone=[shade(sk,.5),shade(sk,.34),shade(sk,.2)][k],lit=L.sky[1],glow=K>1?lit:'#ffd98a';let px=-60;
   while(px<CTW+60){
    const w=44+R()*96,h=110+R()*(k?300:220),y=CBY-h;
    x.fillStyle=tone;x.fillRect(px,y,w,h); // корпус
    x.fillStyle='#00000038';x.fillRect(px+w*.68,y,w*.32,h); // теневая сторона
    x.fillStyle=tone;x.fillRect(px-6,y-9,w+12,10); // карниз
-   if(k==2&&R()<.5)x.fillRect(px+w*.4,y-28,4,28); // антенна
-   if(k&&R()<.35){x.fillRect(px+w*.2,y-20,17,20);x.fillRect(px+w*.2-3,y-24,23,5)} // бак на крыше
+   if(K==2){x.fillStyle=tone;x.beginPath();x.moveTo(px-6,y-9);x.lineTo(px+w/2,y-26-R()*22);x.lineTo(px+w+6,y-9);x.closePath();x.fill()} // шпиль
+   else if(K==1){x.fillStyle=tone;x.fillRect(px+w*.32,y-30-R()*24,9,32);x.fillRect(px+w*.32-5,y-36,19,7)} // труба с колпаком
+   else if(K==3&&R()<.6){x.fillStyle=tone;x.fillRect(px-4,y-16,w+8,7);x.fillRect(px+w*.2,y-28,w*.6,7)} // ступенчатая терраса
+   else if(K==0&&R()<.4)x.fillRect(px+w*.4,y-20,4,20); // антенна
+   if(k){x.fillStyle=shade(sk,.62);x.fillRect(px+w*.2,y-20,17,20);x.fillRect(px+w*.2-3,y-24,23,5)} // бак на крыше
    if(k)for(let wy=y+15;wy<CBY-12;wy+=17)for(let wx=px+7;wx<px+w-9;wx+=14)if(R()<.38){ // окна
-    x.fillStyle=R()<.1?'#ff8fc0':'#ffd98a';x.fillRect(wx,wy,7,8)}
-   if(k==2&&R()<.22){x.fillStyle=R()<.5?'#5ce1e6':'#ff5c8a';x.fillRect(px+w*.3,y+34,24,11)} // вывеска
+    x.fillStyle=R()<.14?lit:glow;x.fillRect(wx,wy,7,8)}
+   if(k==2&&R()<.22){x.fillStyle=R()<.5?lit:shade(sk,.7);x.fillRect(px+w*.3,y+34,24,11)} // вывеска
    px+=w+6+R()*26}
-  const g=x.createLinearGradient(0,CBY-170,0,CBY);g.addColorStop(0,'rgba(18,10,34,0)');g.addColorStop(1,'rgba(18,10,34,.8)');
+  const g=x.createLinearGradient(0,CBY-170,0,CBY);g.addColorStop(0,'rgba(18,10,34,0)');g.addColorStop(1,shade(sk,.12)+'d0');
   x.fillStyle=g;x.fillRect(0,CBY-170,CTW,170); // дымка у основания
   return{c,f}});
 }
+function shade(hex,f){ // затемнить/осветлить свой цвет уровня на коэффициент f — один хелпер вместо палитры на 12 тем
+ const n=parseInt(hex.slice(1),16),r=n>>16&255,gg=n>>8&255,b=n&255;
+ return'#'+[r,gg,b].map(v=>Math.max(0,Math.min(255,Math.round(v*f))).toString(16).padStart(2,'0')).join('')}
 function skyCity(){
  const mx=650-cam*.03,my=88+Math.min(camY*.04,40),mg=g.createRadialGradient(mx,my,2,mx,my,58);
  mg.addColorStop(0,'#fff6dc');mg.addColorStop(.22,'#ffe7aeaa');mg.addColorStop(1,'#ffe7ae00');
@@ -429,7 +487,7 @@ function girl(){
   rnS+=((Math.abs(P.vx)>RUNV&&P.on?1:0)-rnS)*.28; // поза бега догоняет порог, а не щёлкает 0<->1 на нём
  const x=P.x,f=P.f,run=rnS,ph=t*.5; // инерция гасит vx долго — рисуем бег только когда реально бежим
  let y=P.y;
- if(P.inv>0&&(t>>2)%2)return;
+ if(P.inv>0&&shieldT<=0&&(t>>2)%2)return; // мигание неуязвимости полностью прятало героя, и на щите (inv=90) он моргал до исчезновения — теперь щит гасит мигание
  y-=Math.abs(Math.sin(ph))*2*run;
  lndS+=((P.lnd>0?1:0)-lndS)*.34; // squash набегает и сходит плавно: срезка по P.lnd прыгала на 0.98 в последний кадр
  const S='#f2c6a0',K='#1c1526',flip=P.jp>0&&!P.on,land=lndS;
@@ -490,7 +548,8 @@ function girl(){
   g.save();g.translate(e.x,e.y);
   if(k>2){g.fillStyle='#ffd54a';g.beginPath();g.moveTo(3,3);g.lineTo(8,-7);g.lineTo(13,3);g.lineTo(18,-7);g.lineTo(23,3);g.lineTo(28,-7);g.lineTo(33,3);g.closePath();g.fill()} // корона босса
   rr(0,6,30,28,8,c);rr(3,0,24,14,6,'#33224d');
-  g.lineWidth=2;g.strokeStyle='#150a22';g.beginPath();g.roundRect(0,6,30,28,8);g.roundRect(3,0,24,14,6);g.stroke(); // тёмный контур: читается и на светлом небе, и на тёмном
+  g.lineWidth=5;g.strokeStyle='#ffffff59';g.beginPath();g.roundRect(0,6,30,28,8);g.roundRect(3,0,24,14,6);g.stroke(); // светлый ореол: на светлом небе силуэт иначе сливается
+   g.lineWidth=2;g.strokeStyle='#150a22';g.beginPath();g.roundRect(0,6,30,28,8);g.roundRect(3,0,24,14,6);g.stroke(); // тёмный контур поверх: читается и на тёмном фоне
   if(k>1){g.fillStyle='#ffd54a';g.beginPath();g.moveTo(2,11);g.lineTo(-5,2);g.lineTo(2,5);g.fill();g.beginPath();g.moveTo(28,11);g.lineTo(35,2);g.lineTo(28,5);g.fill()} // шипы
   g.fillStyle='#fff';g.fillRect(7,8,6,5);g.fillRect(17,8,6,5);
   g.fillStyle='#000';g.fillRect(9,10,3,3);g.fillRect(18,10,3,3);
@@ -527,7 +586,10 @@ function girl(){
  skyCity();
 g.save();g.translate(-cam+(shake?(Math.random()-.5)*shake:0),-camY+(shake?(Math.random()-.5)*shake*.5:0));
   g.fillStyle='#ffffff22';for(let i=0;i<40;i++)g.fillRect(i*83%W,20+i*37%(LH-40),2,2);
- for(const p of L.p){rr(p[0],p[1],p[2],p[3],4,p[1]==GY?'#2d1f4d':'#7b5ea7');if(p[1]!=GY)g.fillStyle='#b993e8',g.fillRect(p[0],p[1],p[2],3)}
+ for(const p of L.p){const gr=p[1]==GY; // линия земли рисуется только под настоящей землёй: одна сплошная полоса висела над пропастями
+   if(gr){rr(p[0],p[1],p[2],p[3],4,'#2d1f4d');g.fillStyle='#4a3775';g.fillRect(p[0],p[1],p[2],4)}
+   else{g.fillStyle='#0000005c';g.fillRect(p[0]+2,p[1]+3,p[2],4); // тень под площадкой: на светлом небе плитка сливалась с фоном
+    rr(p[0],p[1],p[2],p[3],4,'#7b5ea7');g.fillStyle='#b993e8';g.fillRect(p[0],p[1],p[2],3)}}
  for(const b of L.s||[]){ // стена: непроходимая, низкая — перепрыгивается, но задаёт направление
   rr(b[0],b[1],b[2],b[3],3,'#6b5636');g.fillStyle='#a08b57';g.fillRect(b[0],b[1],b[2],3);g.fillStyle='#3a2e1c';
   for(let i=1;i*16<b[2];i++)g.fillRect(b[0]+i*16,b[1]+4,2,b[3]-4)}
@@ -538,7 +600,6 @@ g.save();g.translate(-cam+(shake?(Math.random()-.5)*shake:0),-camY+(shake?(Math.
    else{g.moveTo(-6,-8-i*8);g.lineTo(0,-1-i*8);g.lineTo(6,-8-i*8)}
    g.stroke()}
   g.globalAlpha=1;g.restore()}
- g.fillStyle='#4a3775';g.fillRect(0,GY,W,4);
  for(const c of coins){if(c.g)continue;const y=c.y+Math.sin(t*.08+c.x)*3;g.fillStyle='#ffd54a';g.beginPath();g.arc(c.x,y,10,0,7);g.fill();g.fillStyle='#a67c00';g.font='bold 12px system-ui';g.textAlign='center';g.fillText('₽',c.x,y+4)}
 foes.forEach(e=>{if(!e.dead)hater(e)});
   girl();
@@ -546,7 +607,10 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
    if(s.l>0&&P.inv<=0){ // овально-шипастая рамка горит только пока фраза реально может ранить
     g.beginPath();for(let i=0;i<24;i++){const a=i/24*6.2832+t*.05,k=i%2?1:1.45;g.lineTo(Math.cos(a)*31*k,Math.sin(a)*13*k)}
     g.closePath();g.strokeStyle='#ff2d55';g.lineWidth=1.8;g.stroke()}
-   g.font='bold 13px system-ui';g.textAlign='center';g.lineWidth=4.5;g.strokeStyle='#ff2d55';g.strokeText(s.s,0,0);g.fillStyle=s.g?'#ffd54a':'#ffe4ec';g.fillText(s.s,0,0);g.restore()}); // фразы в полёте
+   g.font='bold 13px system-ui';g.textAlign='center';g.lineWidth=7;g.strokeStyle='#1c1526cc';g.strokeText(s.s,0,0); // тёмный контур под обводкой: на светлом небе фраза была почти не видна
+   g.lineWidth=3;g.strokeStyle='#ff2d55';g.strokeText(s.s,0,0);g.fillStyle=s.g?'#ffd54a':'#ffffff';g.fillText(s.s,0,0);g.restore()}); // фразы в полёте
+  shd.forEach(q=>{g.save();g.translate(q.x,q.y);g.rotate(q.r);g.globalAlpha=Math.min(1,q.l/18);g.font='bold 13px system-ui';g.textAlign='center';
+   g.lineWidth=6;g.strokeStyle='#1c1526cc';g.strokeText(q.c,0,0);g.lineWidth=2.5;g.strokeStyle='#ff2d55';g.strokeText(q.c,0,0);g.fillStyle='#fff';g.fillText(q.c,0,0);g.restore()}); // осколки убитой фразы
  g.font='bold 14px system-ui';g.textAlign='center';g.lineWidth=3;g.strokeStyle='#000a';g.strokeText('Валя',P.x+12,P.y-12);g.fillStyle='#fff';g.fillText('Валя',P.x+12,P.y-12);
   g.fillStyle='#fff';g.fillRect(L.fin[0],L.fin[1]-80,4,80);g.fillStyle='#ff5c8a';g.fillRect(L.fin[0]+4,L.fin[1]-80,34,22);
   if(L.fin[2]&&!finOpen){ // врата стрима заперты, пока жив босс
@@ -575,9 +639,9 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
    g.fillStyle='#fff';g.fillText(state=='win'?'Сразу к карте…':'Enter или тап — к карте',400,296);
  }
 }
-const fsb=document.getElementById('fs'),wrap=document.getElementById('игр');let wantFs=0; // полный экран
+const fsb=document.getElementById('fs'),wrap=document.getElementById('игр');let wantFs=1; // сразу хотим фулскрин: reset() дёргает goFs(1) из клика по карте — это жест пользователя, браузер его пропускает
 function fss(){const on=!!document.fullscreenElement;fsb.textContent=on?'⤡':'⛶';fsb.setAttribute('aria-label',on?'Выйти из полного экрана':'Полный экран')}
-function goFs(on,keep){wantFs=on||keep?1:0;try{const r=on?wrap.requestFullscreen():document.exitFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+function goFs(on){wantFs=on?1:0;try{const r=on?wrap.requestFullscreen():document.exitFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}} // F и кнопка работают в обе стороны; сорванный промис — тихо остаёмся в окне, повторим на следующем старте
 fsb.onclick=()=>{goFs(!document.fullscreenElement);fsb.blur()}; // blur обязателен: иначе Enter/Пробел снова «нажмут» кнопку и выбьют из фулскрина
 addEventListener('fullscreenchange',fss);fss();
 toMap();
