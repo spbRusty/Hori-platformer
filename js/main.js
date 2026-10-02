@@ -1,4 +1,19 @@
-const cv=document.getElementById('c'),g=cv.getContext('2d');let GY=500,LH=560;
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+let P,coins,foes,state='map',cam,camY,score,t=0,pops,shots,hint=0,taught=0,boss=null,finOpen=0,winT=0;
+let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[],bank=0,lost=0,AG=1;
+const SHPRICE=100,SHMAX=3,RUNV=.6,SWING=24;
+let shield=0,shieldT=0;
+let swA=1.3,rnS=0,lndS=0;
+try{
+ const d=localStorage.getItem('hori_done'),u=+localStorage.getItem('hori_unlocked');
+ if(d!==null)done=d.split(',').filter(Boolean).map(Number);
+ else if(u>0){for(let i=0;i<=u;i++)done.push(i);localStorage.removeItem('hori_unlocked')}
+ best=(localStorage.getItem('hori_best')||'').split(',').filter(Boolean).map(Number);
+ while(best.length<LV.length)best.push(0);
+ bank=+localStorage.getItem('hori_bank')||0;
+ shield=+localStorage.getItem('hori_shield')||0;
+}catch(e){}
+let GY=500,LH=560;
 const keys={},tap={}; // tap — залипание нажатия, иначе быстрый тап/Enter пролетает между шагами физики
 addEventListener('keydown',e=>{
  if(state=='map'&&!e.repeat){ // на карте стрелки листают уровни, Enter — начать
