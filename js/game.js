@@ -9,8 +9,8 @@ function reset(i){
  if(AG>=1.25&&!taught){taught=1;hint=260} // один раз за сессию объясняем правило прямо в игре
   let fi=0;
  // addFoe — общая точка для ручных и авто-врагов, иначе у авто-врагов не будет ни hp, ни залпов, ни разных типов
- const addFoe=(x,y,pat,vx,k)=>{foes.push({x,y,y0:y,w:30,h:34,vx:vx*(1+kd*.3)*AG,sx:0,d:fi%2?1:-1,dg:0,ch:0,x0:x-pat,x1:x+pat,
-   tx:hats[fi%7],sh:-600,k:k==null?kd:k,hp:1+(kd>1)+(kd>2),sr:t+40+(fi*37)%90,vy:0,on:1,pd:0});fi++};
+const addFoe=(x,y,pat,vx,k)=>{foes.push({x,y,y0:y,w:30,h:34,vx:vx*(1+kd*.3)*AG*DF.vx,sx:0,d:fi%2?1:-1,dg:0,ch:0,x0:x-pat,x1:x+pat,
+    tx:hats[fi%7],sh:-600,k:k==null?kd:k,hp:1+(kd>1)+(kd>2),sr:t+(40+(fi*37)%90)*DF.fq,vy:0,on:1,pd:0});fi++};
  L.f.forEach(f=>addFoe(f[0],f[1],f[2],f[3]));
  // автозаполнение пустых участков: своей плотностью на уровень, чтобы больших провалов без врага не оставалось
   const GAP=[300,290,240,290,270,260,240,250,300,250,200,260][li]||280,fin=L.fin[0],finy=L.fin[1],spx=L.sp?L.sp[0]:72,spy=L.sp?L.sp[1]:GY;
@@ -30,7 +30,7 @@ function reset(i){
        if(!n)break}}
    else if(pl[2]>=90){const x=pl[0]+pl[2]/2; // на каждой площадке шире 90 — свой хейтер. Откат к 130 давал +8 пустых площадок на Финале и не менял проходимость: она валится на вертикальных уровнях из-за бота, а не из-за плотности (кривая 6..37 врагов = 0/5 всюду)
    if(fits(x,y))addFoe(x,y,Math.min(70,pl[2]/2-25),1.1+(x%5)*.14,Math.max(0,kd-(x%4===0?1:0)))}});
-  if(L.bs){boss={x:L.bs[0],y:L.bs[1],y0:L.bs[1],w:BOSS.w,h:BOSS.h,vx:2.2*AG,sx:0,d:-1,dg:0,ch:0,x0:340,x1:2140,tx:'директор',tq:0,sp:60,sh:-600,k:5,hp:BOSS.hp,bs:BOSS.hp,sr:t+50,vy:0,on:1,hi:0,ht:0};foes.push(boss)}
+  if(L.bs){boss={x:L.bs[0],y:L.bs[1],y0:L.bs[1],w:BOSS.w,h:BOSS.h,vx:2.2*AG*DF.vx,sx:0,d:-1,dg:0,ch:0,x0:scl(340),x1:scl(2140),tx:'директор',tq:0,sp:60,sh:-600,k:5,hp:BOSS.hp,bs:BOSS.hp,sr:t+50*DF.fq,vy:0,on:1,hi:0,ht:0};foes.push(boss)}
  }
 function pop(x,y,s,c){pops.push({x,y,s,c,l:50})}
 function shatter(x,y,s){ // убитая фраза не исчезает, а рассыпается на буквы: каждая летит в свою сторону и крутится
@@ -43,5 +43,5 @@ function shKey(){ // щит тратит заряд: гасит любой ур�
   bank-=SHPRICE;shield=SHMAX;save();pop(P.x+12,P.y-16,'щит ×'+SHMAX,'#5ce1e6')}
  shield--;P.inv=Math.max(P.inv,90);shieldT=90;save();snd('shield');
  pops.push({x:P.x+12,y:P.y-16,s:'ЩИТ',st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.3,l:44})}
-function shoot(e,a,t){a=a==null?Math.atan2(P.y+22-e.y-6,P.x+12-e.x):a;shots.push({x:e.x+15,y:e.y+6,vx:Math.cos(a)*4.2,vy:Math.sin(a)*4.2,sp:4.2,s:t||say[Math.random()*say.length|0],l:200})} // фраза-снаряд сама наводится на Валю
+function shoot(e,a,t){a=a==null?Math.atan2(P.y+22-e.y-6,P.x+12-e.x):a;const q=4.2*DF.sp;shots.push({x:e.x+15,y:e.y+6,vx:Math.cos(a)*q,vy:Math.sin(a)*q,sp:q,s:t||say[Math.random()*say.length|0],l:200})} // фраза-снаряд сама наводится на Валю; q — скорость с учётом сложности
 function pick(n){const p=[];while(p.length<n){const q=say.slice();for(let i=q.length-1;i;i--){const j=Math.random()*(i+1)|0;const z=q[i];q[i]=q[j];q[j]=z}p.push(...q)}return p} // без повторов в залпе: снаряды летят из одной точки и одинаковые фразы ложатся друг на друга

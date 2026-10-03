@@ -1,8 +1,8 @@
 :root{--bg:#1a1326;--fg:#f3e9ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg)}
-canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#2b1d45;border-radius:10px}
-#игр{width:100%;max-width:900px;display:flex;justify-content:center;position:relative}
+body{background:var(--bg)}
+canvas{width:100%;height:100%;display:block;background:#2b1d45;object-fit:contain}
+#игр{position:fixed;inset:0;width:100%;height:100%;background:#000}
 #игр:fullscreen,#игр:-webkit-full-screen{width:100%;height:100%;max-width:none;background:#000}
 #игр:fullscreen canvas,#игр:-webkit-full-screen canvas{max-width:none;max-height:none;width:100%;height:100%;object-fit:contain;border-radius:0}
 #гайд{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;
@@ -16,8 +16,8 @@ canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#
 #гайд span:nth-child(6) b{background:linear-gradient(180deg,#ffc7a8,#ff6a3d);box-shadow:0 2px 0 #6d2408}
 #гайд span:nth-child(7) b{background:linear-gradient(180deg,#ffb3d9,#ff3d7f);box-shadow:0 2px 0 #6d0c3a}
 #гайд span:nth-child(8) b{background:linear-gradient(180deg,#c9d4ff,#4a63d8);box-shadow:0 2px 0 #1b2a6b}
-#pad{display:flex;justify-content:space-between;width:100%;max-width:900px;padding:10px 12px;box-sizing:border-box}
-#pad div{display:flex;gap:10px}
+#pad{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;justify-content:space-between;width:100%;max-width:none;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));box-sizing:border-box;pointer-events:none}
+#pad div{display:flex;gap:10px;pointer-events:auto}
 #pad button{width:min(62px,13vw);height:min(62px,13vw);font-size:min(26px,6vw);border:0;border-radius:50%;background:#ffffff26;color:var(--fg)}
 #pad button:active{background:#ffffff55}
 #кнопки{position:fixed;top:8px;right:8px;z-index:10;display:flex;gap:8px}
@@ -34,13 +34,17 @@ canvas{width:100%;max-width:900px;max-height:70vh;aspect-ratio:16/9;background:#
 #map p{margin:0;font-size:13px;opacity:.6}
 #статы{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:11px}
 #статы span{padding:4px 12px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff26;font-size:clamp(10px,2.4vw,13px);white-space:nowrap}
+#слож{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:12px}
+#слож em{font-style:normal;font-size:11px;opacity:.55;letter-spacing:.1em;text-transform:uppercase}
+#слож button{padding:7px 17px;border:2px solid #7b5ea7;border-radius:999px;background:#2b1d45;color:var(--fg);font:inherit;font-size:clamp(12px,2.8vw,14px);cursor:pointer}
+#слож button.sel{border-color:#5ce1e6;background:#1d3b44;box-shadow:0 0 0 3px #5ce1e633}
+#слож span{font-size:12px;opacity:.62}
 #path{position:relative;width:100%;max-width:560px;height:min(56vh,330px)}
 #path svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #path line{stroke:#4a3775;stroke-width:2;vector-effect:non-scaling-stroke}
 #path line.on{stroke:#ffd54a}
 #path button{position:absolute;transform:translate(-50%,-50%);width:clamp(54px,16vw,80px);min-height:44px;padding:5px 2px;border:2px solid #7b5ea7;border-radius:12px;background:#2b1d45;color:var(--fg);font:inherit;display:flex;flex-direction:column;gap:2px;align-items:center;cursor:pointer}
-#path button b{font-size:15px;line-height:1;color:#ffd54a}
-#path button span{font-size:clamp(9px,2.6vw,12px);line-height:1.1;overflow-wrap:anywhere}
+#path button span{font-size:clamp(10px,3vw,13px);font-weight:600;line-height:1.15;overflow-wrap:anywhere}
 #path button i{font-style:normal;font-size:10px;line-height:1;opacity:.7}
 #path button:not([disabled]):active{background:#5a3a6e}
 #path button.sel{border-color:#5ce1e6;box-shadow:0 0 0 3px #5ce1e666}

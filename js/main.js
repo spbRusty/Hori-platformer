@@ -1,5 +1,5 @@
 const cv=document.getElementById('c'),g=cv.getContext('2d');
-let P,coins,foes,state='map',cam,camY,score,t=0,pops,shots,shd,hint=0,taught=0,boss=null,finOpen=0,winT=0;
+let P,coins,foes,state='map',cam,camY,score,t=0,pops,shots,shd,hint=0,taught=0,boss=null,finOpen=0;
 let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[],bank=0,lost=0,AG=1;
 const SHPRICE=100,SHMAX=3,RUNV=.6,SWING=24;
 let shield=0,shieldT=0;
@@ -34,10 +34,10 @@ document.querySelectorAll('#pad button').forEach(b=>{
  b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=1;tap[k]=1});
  ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>keys[k]=0));
 });
-cv.addEventListener('pointerdown',e=>{if(state!='play'){toMap();return} // тап по канвасу вне игры — карта
+cv.addEventListener('pointerdown',e=>{if(state!='play'){if(state=='lose')reset(li);else toMap();return} // тап: поражение — тот же уровень, победа — карта
  const r=cv.getBoundingClientRect(),cx=(e.clientX-r.left)/r.width,cy=(e.clientY-r.top)/r.height;
  if(Math.abs(cx-.5)<.16&&Math.abs(cy-.5)<.26)volStep()}); // клик по центру экрана — регулятор громкости
- const VVOL=[.06,.12,.2,.32,.5],VBAR=[11,17,24,31,39]; // 5 делений, верхнее громче прежних трёх
+ const VVOL=[.11,.2,.33,.52,.74],VBAR=[11,17,24,31,39]; // 5 делений, верхнее громче прежних трёх
  let vlv=3,vdir=-1,volT=0; // rockers: в одну сторону тише, на краю разворот в другую
  const volEl=document.getElementById('гром'),VMX=VVOL.length-1;
  function volStep(){if(vlv<=0)vdir=1;if(vlv>=VMX)vdir=-1;vlv=Math.max(0,Math.min(VMX,vlv+vdir));
@@ -99,7 +99,7 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
   g.font='bold 34px system-ui';g.fillText(state=='win'?L.n+' — стрим окончен!':'Хейтеры победили',400,200);
   g.font='20px system-ui';g.fillStyle='#ffd54a';g.fillText('Собрано донатов: '+score+' ₽',400,240);
   g.fillStyle=state=='lose'?'#ff5c8a':'#c39bd3';g.fillText(state=='lose'?'Сгорело '+lost+' ₽ — половина банка':'Банк: '+bank+' ₽ · хейтеры будут злее ×'+AG.toFixed(2),400,264);
-   g.fillStyle='#fff';g.fillText(state=='win'?'Сразу к карте…':'Enter или тап — к карте',400,296);
+   g.fillStyle='#fff';g.fillText(state=='win'?'Enter или тап — карта уровней':'Enter или тап — этот уровень заново',400,296);
  }
 }
 const fsb=document.getElementById('fs'),wrap=document.getElementById('игр');let wantFs=0; // полный экран

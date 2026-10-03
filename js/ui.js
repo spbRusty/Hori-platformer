@@ -1,13 +1,16 @@
 const mapEl=document.getElementById('map');
 const pathEl=document.getElementById('path');
 const statEl=document.getElementById('статы');
+const diffEl=document.getElementById('слож');
 
 function toMap(){
  state='map';
+ if(document.fullscreenElement)goFs(0,1); // карта лежит вне #игр и в полноэкранном режиме не видна — выходим, сохраняя wantFs
  document.body.classList.add('menu');
  mapEl.style.display='flex';
  pathEl.textContent='';
  statEl.innerHTML='<span>пройдено '+done.length+'/'+LV.length+'</span><span>банк '+bank+' ₽</span><span>щит ×'+shield+'</span><span>рекорд '+Math.max(0,...best)+' ₽</span>';
+  renderDiff();
  const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');
  sv.setAttribute('viewBox','0 0 100 100');
  sv.setAttribute('preserveAspectRatio','none');
@@ -25,7 +28,7 @@ function toMap(){
   b.disabled=!un;
   b.style.left=NOD[i][0]+'%';
   b.style.top=NOD[i][1]+'%';
-  b.innerHTML='<b>'+(i+1)+'</b><span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':'');
+  b.innerHTML='<span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':'');
   if(un){
    b.onclick=()=>reset(i);
    b.onmouseenter=()=>{mapSelI=mapBtns.findIndex(x=>x[0]==i);mapSel(0)};
@@ -42,4 +45,15 @@ function mapSel(d){
  if(!mapBtns.length)return;
  mapSelI=(mapSelI+d+mapBtns.length)%mapBtns.length;
  mapBtns.forEach(([i,b],k)=>b.classList.toggle('sel',k==mapSelI));
+}
+function renderDiff(){
+ diffEl.textContent='';
+ const t=document.createElement('em');t.textContent='Сложность';diffEl.append(t);
+ DIFF.forEach((d,k)=>{
+  const b=document.createElement('button');
+  b.textContent=d.n;b.title=d.ds;
+  b.className=k==di?'sel':'';
+  b.onclick=()=>{pickDiff(k);renderDiff()};
+  diffEl.append(b)});
+ const s=document.createElement('span');s.textContent=DF.ds;diffEl.append(s);
 }

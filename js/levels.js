@@ -77,3 +77,36 @@ const NOD=[[8,50],[22,28],[22,72],[38,28],[38,72],[54,16],[54,46],[54,78],[70,26
 const hats=["кринж","фу","ноль","уйди","лол","скуф","цирк"];
 const say=["куда ты, ссыкло?","не суйся","иди в стрим","ты тут не свой","беги, клоун","слышь, отвали"]; // фразы, когда Валя пробегает мимо
 function unl(i){return i==0||EDG.some(e=>e[1]==i&&done.indexOf(e[0])>=0)} // узел открыт, если пройден любой родитель
+
+// --- сложность: прежний режим сохранён как «мессиво», два новых замедляют мобов, фразы и стрельбу
+const DIFF=[
+ {id:'easy',n:'Легко',ds:'Мобы вялые, фразы летят медленно, стреляют редко',vx:.66,sp:.74,fq:1.75},
+ {id:'norm',n:'Нормально',ds:'Средняя злоба',vx:.84,sp:.88,fq:1.3},
+ {id:'mess',n:'Мессиво',ds:'Полный хаос — как было',vx:1,sp:1,fq:1}];
+let di=2; // по умолчанию мессиво, чтобы старые прохождения не стали легче сами по себе
+try{const s=localStorage.getItem('hori_diff');if(s!=null){const k=DIFF.findIndex(x=>x.id==s);if(k>=0)di=k}}catch(e){}
+let DF=DIFF[di];
+function pickDiff(k){di=(k+DIFF.length)%DIFF.length;DF=DIFF[di];try{localStorage.setItem('hori_diff',DF.id)}catch(e){}}
+
+// --- каждый уровень короче на треть: вся геометрия и координаты умножаются на 2/3
+const SC=2/3,scl=v=>Math.round(v*SC);
+LV.forEach(L=>{
+ L.w=scl(L.w);L.h=scl(L.h);L.gy=scl(L.gy);
+ const gt=L.fin[2]; // флаг запертых врат читаем до перезаписи, иначе терялся
+ L.fin=[scl(L.fin[0]),scl(L.fin[1])];
+ if(gt)L.fin[2]=1;
+ if(L.bs)L.bs=[scl(L.bs[0]),scl(L.bs[1])];
+ if(L.p)L.p=L.p.map(p=>[scl(p[0]),scl(p[1]),scl(p[2]),scl(p[3])]);
+ if(L.sp){const sx=scl(L.sp[0]);L.sp=[sx,scl(L.sp[1])];
+  let top=Infinity; // округление уводит спавн внутрь площадки — прижимаем к верхней поверхности под ним
+  for(const p of L.p)if(p[0]<=sx&&sx<p[0]+p[2]&&p[1]>=L.sp[1]&&p[1]<top)top=p[1];
+  if(top<Infinity)L.sp[1]=top-44}
+ if(L.s)L.s=L.s.map(b=>[scl(b[0]),scl(b[1]),scl(b[2]),scl(b[3])]);
+ if(L.a)L.a=L.a.map(a=>[scl(a[0]),scl(a[1]),a[2]]);
+ if(L.c)L.c=L.c.map(c=>[scl(c[0]),scl(c[1]),c[2]]);
+ if(L.f)L.f=L.f.map(f=>[scl(f[0]),scl(f[1]),f[2],f[3]]);
+});
+BOSS.x=scl(BOSS.x);BOSS.y=scl(BOSS.y);
+
+// --- уникальный задник на каждый уровень: 12 своих тем вместо четырёх по кругу
+const TH=['tower','pine','brick','pipe','sign','bush','shaft','gold','shield','circuit','stripe','inferno'];
