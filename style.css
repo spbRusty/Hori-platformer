@@ -59,8 +59,6 @@ canvas{width:100%;height:100%;display:block;background:#2b1d45;object-fit:contai
  border:2px solid #7b5ea7;border-radius:14px;background:linear-gradient(180deg,#3a2a5c,#2b1d45);color:var(--fg);font:inherit;
  display:flex;flex-direction:column;gap:2px;align-items:center;cursor:pointer;
  box-shadow:0 4px 0 #170f28,0 8px 18px #0006;transition:transform .1s,box-shadow .1s}
-#path button .этап{position:absolute;top:-7px;left:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;
- background:#5ce1e6;color:#04231a;font:700 10px/18px system-ui;text-align:center}
 #path button span{font-size:clamp(10px,3vw,13px);font-weight:700;line-height:1.12;overflow-wrap:anywhere}
 #path button i{font-style:normal;font-size:10px;line-height:1;opacity:.75;color:#ffd54a}
 #path button:not([disabled]):hover{transform:translate(-50%,-50%) translateY(-2px);box-shadow:0 6px 0 #170f28,0 10px 22px #0007}
@@ -69,7 +67,6 @@ canvas{width:100%;height:100%;display:block;background:#2b1d45;object-fit:contai
 #path button u{position:absolute;top:-8px;right:-6px;width:18px;height:18px;border-radius:50%;background:#22c97e;color:#04231a;font:700 11px/18px system-ui;text-decoration:none}
 #path button u.lock{background:#4a3775;color:#c39bd3;font-size:10px}
 #path button[disabled]{border-color:#3a2a5c;background:linear-gradient(180deg,#241a38,#1a1326);opacity:.55;cursor:not-allowed;box-shadow:0 3px 0 #0e0918}
-#path button[disabled] .этап{background:#4a3775;color:#1a1326}
 #path button[disabled] i{color:#8a7fa8}
 body.menu #pad,body.menu small,body.menu canvas,body.menu #fs,body.menu #гайд{visibility:hidden}
 

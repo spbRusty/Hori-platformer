@@ -14,7 +14,7 @@ function toMap(){
  document.body.classList.add('menu');
  mapEl.style.display='flex';
  pathEl.textContent='';
- statEl.innerHTML='<span>пройдено '+done.length+'/'+LV.length+'</span><span>банк '+bank+' ₽</span><span>щит ×'+shield+'</span><span>рекорд '+Math.max(0,...best)+' ₽</span>';
+ statEl.innerHTML='<span>пройдено '+done.length+'/'+LV.length+'</span>'; // только прогресс — банк/щит/рекорд убрали как мусор
   renderDiff();
   renderNick();
   renderRecords();
@@ -35,7 +35,7 @@ function toMap(){
    b.disabled=!un;
    b.style.left=NOD[i][0]+'%';
    b.style.top=NOD[i][1]+'%';
-   b.innerHTML='<b class="этап">'+(i+1)+'</b><span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':(un?'':'<u class="lock">🔒</u>'));
+   b.innerHTML='<span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':(un?'':'<u class="lock">🔒</u>')); // без номера этапа — визуальный мусор
    if(un){
     b.onclick=()=>reset(i);
     b.onmouseenter=()=>{mapSelI=mapBtns.findIndex(x=>x[0]==i);mapSel(0)};

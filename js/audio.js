@@ -1,8 +1,9 @@
 // --- звук: синтез, без файлов. До-мажорная пентатоника, мягкая атака 12мс
-let AC,MASTER,MUTE=0,MUSG;
+let AC,MASTER,MUTE=0,MUSG,MUSX;
 function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)}catch(e){return}
  MASTER=AC.createGain();MASTER.gain.value=.16;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=6000;MASTER.connect(lp);lp.connect(AC.destination);
- MUSG=AC.createGain();MUSG.gain.value=VVOL[vlv];MUSG.connect(MASTER);mus.next=AC.currentTime+.12;setInterval(musTick,25)}
+ MUSX=AC.createGain();MUSX.gain.value=2.7; // усилитель только музыки: MASTER не трогаем, звуки остаются как были
+ MUSG=AC.createGain();MUSG.gain.value=VVOL[vlv];MUSG.connect(MUSX);MUSX.connect(MASTER);mus.next=AC.currentTime+.12;setInterval(musTick,25)}
 function n(f,d,g,type,delay,glide){if(!AC||MUTE)return;const a=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime+(delay||0);
  a.type=type||'sine';a.frequency.setValueAtTime(f,t);if(glide)a.frequency.exponentialRampToValueAtTime(f*glide,t+d);
  v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g,t+.012);v.gain.exponentialRampToValueAtTime(.0001,t+d);

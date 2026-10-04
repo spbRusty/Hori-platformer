@@ -53,7 +53,8 @@ function draw(){
  skyCity();
 g.save();g.translate(-cam+(shake?(Math.random()-.5)*shake:0),-camY+(shake?(Math.random()-.5)*shake*.5:0));
   g.fillStyle='#ffffff22';for(let i=0;i<40;i++)g.fillRect(i*83%W,20+i*37%(LH-40),2,2);
- for(const p of L.p){rr(p[0],p[1],p[2],p[3],4,p[1]==GY?'#2d1f4d':'#7b5ea7');if(p[1]!=GY)g.fillStyle='#b993e8',g.fillRect(p[0],p[1],p[2],3)}
+ for(const p of L.p){rr(p[0]-2,p[1]-2,p[2]+4,p[3]+4,6,'#1a0b2e'); // тёмная подложка-контур: на тёмном небе финального уровня платформы иначе сливаются с фоном
+  rr(p[0],p[1],p[2],p[3],4,p[1]==GY?'#2d1f4d':'#7b5ea7');if(p[1]!=GY)g.fillStyle='#b993e8',g.fillRect(p[0],p[1],p[2],3)}
  for(const b of L.s||[]){ // стена: непроходимая, низкая — перепрыгивается, но задаёт направление
   rr(b[0],b[1],b[2],b[3],3,'#6b5636');g.fillStyle='#a08b57';g.fillRect(b[0],b[1],b[2],3);g.fillStyle='#3a2e1c';
   for(let i=1;i*16<b[2];i++)g.fillRect(b[0]+i*16,b[1]+4,2,b[3]-4)}
@@ -90,7 +91,7 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
  g.fillStyle='#fff';g.font='bold 18px system-ui';g.textAlign='left';
  g.fillText('❤'.repeat(Math.max(P.hp,0)),16,64);
  if(bank>=LIFEPRICE){g.fillStyle='#5ce1e6';g.font='bold 15px system-ui';g.fillText('ЖИЗНЬ ЗА 1000₽ — ЖМИ X',16,86);lifeUi()}
- g.textAlign='right';g.fillStyle='#ffd54a';g.fillText('Донаты: '+score+' ₽',784,28);
+ g.textAlign='right';g.fillStyle='#ffd54a';g.fillText('Деньги: '+score+' ₽',784,28); // живые деньги за этот заход — ради этого счётчика банк (строка ниже) и не двигается до финиша
   g.font='bold 14px system-ui';g.fillStyle=AG>1.3?'#ff5c8a':'#c39bd3';g.fillText('Банк '+bank+' ₽ → хейтеры ×'+AG.toFixed(2),784,48);
   g.fillStyle=shield?'#5ce1e6':'#8a7fa8';g.fillText(shield?'Щит ×'+shield+' — C':'Щит '+SHPRICE+' ₽/3 — C',784,68);
  if(hint>0){g.globalAlpha=Math.min(1,hint/50);g.fillStyle='#000c';g.fillRect(0,112,800,46);

@@ -25,7 +25,8 @@ function hater(e){
   g.fillStyle='#ffd54a';g.beginPath();g.moveTo(3,3);g.lineTo(8,-7);g.lineTo(13,3);g.lineTo(18,-7);g.lineTo(23,3);g.lineTo(28,-7);g.lineTo(33,3);g.closePath();g.fill(); // корона
   rr(0,6,30,28,8,'#2b1038');rr(3,0,24,14,6,pv?'#8e44ad':'#3b2158');
   g.lineWidth=1.2;g.strokeStyle=pv?'#ff2d55':'#ff8fc0';g.beginPath();g.roundRect(0,6,30,28,8);g.roundRect(3,0,24,14,6);g.stroke(); // тёмный силуэт с ярким контуром вместо сливания с небом
-  g.fillStyle=pv?'#ff2d55':'#ffd54a';g.beginPath();g.moveTo(2,11);g.lineTo(-5,2);g.lineTo(2,5);g.fill();g.beginPath();g.moveTo(28,11);g.lineTo(35,2);g.lineTo(28,5);g.fill(); // шипы
+  const hf=e.ht>0&&(t>>1)%2===0; // рога вспыхивают белым ровно в окне удара: босс держит удар и неуязвим — видно, куда бить
+  g.fillStyle=hf?'#fff':pv?'#ff2d55':'#ffd54a';g.beginPath();g.moveTo(2,11);g.lineTo(-5,2);g.lineTo(2,5);g.fill();g.beginPath();g.moveTo(28,11);g.lineTo(35,2);g.lineTo(28,5);g.fill(); // рога
   g.fillStyle='#fff';g.fillRect(6,8,8,6);g.fillRect(16,8,8,6);
   g.fillStyle='#ff2d55';g.fillRect(9,10,4,4);g.fillRect(18,10,4,4); // злые глаза
   g.strokeStyle='#000';g.lineWidth=2;g.beginPath();g.moveTo(5,6);g.lineTo(13,9);g.moveTo(25,6);g.lineTo(17,9);g.stroke();

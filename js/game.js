@@ -38,7 +38,7 @@ const addFoe=(x,y,pat,vx,k)=>{y=stand(x,y);foes.push({x,y:y-EDROP,y0:y,w:30,h:34
        if(!n)break}}
    else if(pl[2]>=90){const x=pl[0]+pl[2]/2; // на каждой площадке шире 90 — свой хейтер. Откат к 130 давал +8 пустых площадок на Финале и не менял проходимость: она валится на вертикальных уровнях из-за бота, а не из-за плотности (кривая 6..37 врагов = 0/5 всюду)
    if(fits(x,y))addFoe(x,y,Math.min(70,pl[2]/2-25),1.1+(x%5)*.14,Math.max(0,kd-(x%4===0?1:0)))}});
-  if(L.bs){boss={x:L.bs[0],y:L.bs[1],y0:L.bs[1],w:BOSS.w,h:BOSS.h,vx:2.2*AG*DF.vx,sx:0,d:-1,dg:0,ch:0,x0:scl(340),x1:scl(2140),tx:'директор',tq:0,sp:60,sh:-600,k:5,hp:BOSS.hp,bs:BOSS.hp,sr:t+50*DF.fq,vy:0,on:1,hi:0,ht:0};foes.push(boss)}
+  if(L.bs){boss={x:L.bs[0],y:L.bs[1],y0:L.bs[1],w:BOSS.w,h:BOSS.h,vx:2.2*AG*DF.vx,sx:0,d:-1,dg:0,ch:0,x0:scl(900),x1:scl(2000),tx:'директор',tq:0,sp:60,sh:-600,k:5,hp:BOSS.hp,bs:BOSS.hp,sr:t+50*DF.fq,vy:0,on:1,hi:0,ht:0};foes.push(boss)}
  }
 function pop(x,y,s,c){pops.push({x,y,s,c,l:50})}
 function shatter(x,y,s){ // убитая фраза не исчезает, а рассыпается на буквы: каждая летит в свою сторону и крутится
