@@ -4,6 +4,7 @@ let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[],bank=0,lost=0,AG=1;
 const SHPRICE=100,SHMAX=3,LIFEPRICE=1000,RUNV=.6,SWING=24;
 let shield=0,shieldT=0;
 let swA=1.3,rnS=0,lndS=0;
+let conf=[],confT=0,celeb=0; // салют финала: конфетти с четырёх краёв кадра + ракеты с разрывом. conf именно через let — иначе присваивание ушло бы в window.conf (это CSP) и молча провалилось бы
 try{
  const d=localStorage.getItem('hori_done'),u=+localStorage.getItem('hori_unlocked');
  if(d!==null)done=d.split(',').filter(Boolean).map(Number);
@@ -99,10 +100,20 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
   g.fillStyle='#ffd54a';g.font='bold 15px system-ui';g.fillText(' смерть сожжёт половину банка — богатым быть опаснее',400,161);g.globalAlpha=1}
  if(state=='win'||state=='lose'){
   g.fillStyle='#000a';g.fillRect(0,0,800,450);g.fillStyle='#fff';g.textAlign='center';
+  if(state=='win'&&L.bs){ // финал: салют и поздравление только на уровне с боссом, у остальных 11 экран остаётся прежним
+   conf.forEach(q=>{g.globalAlpha=Math.min(1,q.l/(q.k?14:40));g.fillStyle=q.c; // искры и ракета гаснут быстро, конфетти живут дольше
+    if(q.k){g.beginPath();g.arc(q.x,q.y,q.k==1?2.6:1.9,0,7);g.fill()} // ракета и искра — точка: не спорит с буквами
+    else{g.save();g.translate(q.x,q.y);g.rotate(q.r);g.fillRect(-3.2,-1.7,6.4,3.4);g.restore()} // конфети — узкая пластинка, видно как крутится
+    g.globalAlpha=1}); // конфетти поверх затемнения, но под текстом: буквы остаются читаемыми
+   const TXT=[['Поздравляю! Победа!','#ffd54a',40,112,7],['Все твои хейтеры повержены!','#ff5c8a',25,152,6],['Ты прошёл все двенадцать уровней','#c39bd3',22,185,5],['Ты молодец!','#ffffff',28,222,6],['Ты лучше всех!','#ffd54a',28,258,6],['Стрим свободен — занавес опускается','#5ce1e6',22,298,5],['Слава тебе, легенда: донат лился рекой','#ffffff',22,329,5],['Собрано донатов: '+score+' ₽','#ffd54a',22,363,5],['Банк: '+bank+' ₽ · хейтеры будут злее ×'+AG.toFixed(2),'#c39bd3',18,389,4],['Enter или тап — карта уровней','#fff',20,418,4]];
+   // тёмная обводка под каждой строкой: конфетти летят прямо сквозь текст, и без неё буквы в пыли не прочесть
+   for(const s of TXT){g.font='bold '+s[2]+'px system-ui';g.lineWidth=s[4];g.strokeStyle='#1c1526d9';g.strokeText(s[0],400,s[3]);g.fillStyle=s[1];g.fillText(s[0],400,s[3])}
+  }else{
   g.font='bold 34px system-ui';g.fillText(state=='win'?L.n+' — стрим окончен!':'Хейтеры победили',400,200);
   g.font='20px system-ui';g.fillStyle='#ffd54a';g.fillText('Собрано донатов: '+score+' ₽',400,240);
   g.fillStyle=state=='lose'?'#ff5c8a':'#c39bd3';g.fillText(state=='lose'?'Сгорело '+lost+' ₽ — половина банка':'Банк: '+bank+' ₽ · хейтеры будут злее ×'+AG.toFixed(2),400,264);
    g.fillStyle='#fff';g.fillText(state=='win'?'Enter или тап — карта уровней':'Enter или тап — этот уровень заново',400,296);
+  }
  }
 }
 const fsb=document.getElementById('fs'),wrap=document.getElementById('игр');let wantFs=0; // полный экран

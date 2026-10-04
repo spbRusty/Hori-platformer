@@ -2,7 +2,7 @@ const EDROP=470; // на сколько выше своей площадки п�
 function reset(i){
  li=i;L=LV[i];W=L.w;GY=L.gy;LH=L.h;
  P={x:60,y:L.sp?L.sp[1]:GY-44,w:24,h:44,vx:0,vy:0,f:1,on:0,atk:0,inv:0,hp:3,jp:0,lnd:0,kills:0,j:1,lx:60,ly:L.sp?L.sp[1]:GY-44}; // j — запас двойного прыжка; atk:0 — меч молчит, пока рядом не будет кого бить; lx/ly — последняя твёрдая точка, оттуда воскрешают после падения
- coins=[];foes=[];pops=[];shots=[];shd=[];score=0;state='play';cam=0;camY=0;shake=0;boss=null;finOpen=0;buildCity();mapEl.style.display='none';document.body.classList.remove('menu');if(wantFs&&!document.fullscreenElement)goFs(1);snd('start');
+ coins=[];foes=[];pops=[];shots=[];shd=[];conf=[];confT=0;celeb=0;score=0;state='play';cam=0;camY=0;shake=0;boss=null;finOpen=0;buildCity();mapEl.style.display='none';document.body.classList.remove('menu');if(wantFs&&!document.fullscreenElement)goFs(1);snd('start');
  L.p.slice(1).forEach(p=>{for(let i=0;i<2;i++)coins.push({x:p[0]+30+i*(p[2]-60)/1,y:p[1]-30,v:10*(1+i)})});
   (L.c||[]).forEach(c=>coins.push({x:c[0],y:c[1],v:c[2]})); // дорогие монеты из данных уровня: лежат там, где сорваться дорого
  const kd=Math.min(3,li>>1); // тип хейтера растёт с уровнем: 0 нуль, 1 стрелок, 2 залповый, 3 босс

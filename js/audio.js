@@ -41,9 +41,16 @@ const ROOTS=[110,87.31,98,82.41,130.81,146.83];
 const PROG=[0,1,2,3,4,2,3,0]; // 8 тактов: два раунда по 4 с разворотом — не приедается
 const MELV=[0,null,3,7,5,null,3,2, 0,null,-3,null,0,null,null,null, 3,5,7,10,12,null,10,7, 5,null,3,null,0,null,null,null,
             0,3,5,3,7,null,5,7, 10,7,5,3,2,null,0,null, 3,null,5,7,8,7,5,3, 2,0,-1,null,0,null,null,null].map(s=>s==null?0:440*Math.pow(2,s/12));
-const mus={on:1,step:0,next:0,danger:0};
+// --- финальный триумф: мажорный подъём, чтобы победа звучала эпичнее обычного минорного цикла
+const FCHORDS=[[261.63,329.63,392],[329.63,392,523.25],[392,493.88,587.33],[349.23,440,523.25],[523.25,659.25,783.99],[440,523.25,659.25]]; // C, C/E, G, F, C/E, G, Am — мажорный подъём вместо минорного Am-цикла обычного режима
+const FROOTS=[130.81,174.61,196,110,174.61,196,130.81];
+const FPROG=[0,1,2,3,1,2,0,0]; // восходящее разрешение
+const FMELV=[0,4,7,12,16,null,12,7, 4,7,12,16,19,null,16,12, 7,12,16,19,24,null,19,16, 12,7,4,0,4,null,7,null,
+            0,4,7,12,16,null,12,7,  12,16,19,24,28,null,24,19,  16,19,24,28,31,null,28,24,  19,16,12,7,4,0,-4,0].map(s=>s==null?0:440*Math.pow(2,s/12));
+const mus={on:1,step:0,next:0,danger:0,fin:0};
 function musBtn(){mus.on=mus.on?0:1;if(mus.on&&AC&&mus.next<AC.currentTime)mus.next=AC.currentTime+.05;
- const b=document.getElementById('муз');if(b)b.classList.toggle('off',!mus.on)}
+  const b=document.getElementById('муз');if(b)b.classList.toggle('off',!mus.on)}
+
 function dangerNow(){return !!(P&&P.hp<=1)||!!(P&&foes&&foes.some(e=>!e.dead&&Math.abs(e.x-P.x)<170))} // драма: одна жизнь или хейтер рядом
 function mnote(f,d,v,ty,t0){if(!AC||!mus.on||MUTE)return;const a=AC.createOscillator(),v2=AC.createGain();
  a.type=ty;a.frequency.setValueAtTime(f,t0);
@@ -59,19 +66,32 @@ function mkick(t0,v){if(!AC||!mus.on||MUTE)return;const a=AC.createOscillator(),
  a.type='sine';a.frequency.setValueAtTime(165,t0);a.frequency.exponentialRampToValueAtTime(42,t0+.13);
  v2.gain.setValueAtTime(v,t0);v2.gain.exponentialRampToValueAtTime(.0001,t0+.18);
  a.connect(v2);v2.connect(MUSG);a.start(t0);a.stop(t0+.2)}
-function musStep(s,t0){const D=mus.danger,bar=s>>3,i=s&7,c=PROG[bar],ch=CHORDS[c],rt=ROOTS[c],arp=[0,1,2,1,0,2,1,2];
- if(i===0||i===4)mnote(rt,D?.24:.17,.3,'sawtooth',t0);           // бас
- if(i%2===0)mnote(ch[arp[i]],.12,D?.13:.09,'square',t0);           // арпеджио восьмыми — движение есть, а не бубнение одной нотой
- const m=MELV[s];if(m)mnote(m*(D?2:1),.18,D?.12:.08,'square',t0);  // мелодия
- if(i===0)mnote(ch[0]*2,.55,D?.07:.05,'triangle',t0);              // подушка на тонике аккорда
- if(bar%4===3&&i===6)mnote(MELV[s]*2,.14,.05,'square',t0);         // эхо на последнем такте раунда
- if(i===0||i===3)mkick(t0,D?.5:.34);
- if(i===4)mnoise(t0,.11,D?.15:.1,1500);
- if(i&1)mnoise(t0,.03,D?.07:.04,7000);
- if(D&&i===6)mnoise(t0,.08,.05,3200);
- if(bar===7&&i>=5)mnoise(t0,.05,.06,4000)}                        // фил в конце раунда
+function musStepFin(s,t0){const bar=s>>3,i=s&7,c=FPROG[bar%8],ch=FCHORDS[c],rt=FROOTS[c],arp=[0,1,2,1,0,2,1,2];
+  if(i===0||i===4)mnote(rt,.26,.36,'sawtooth',t0);                   // бас: мощнее обычного
+  if(i%2===0)mnote(ch[arp[i]],.12,.12,'square',t0);                  // арпеджио
+  const m=FMELV[s];if(m)mnote(m,.5,.1,'square',t0);                   // .5, а не 1.6: при шаге .134 длинная нота держала бы ~12 голосов сразу, через MUSG ×2.7 это каша
+  if(i===0)mnote(ch[0]*2,.6,.08,'triangle',t0);                      // тоническая подушка
+  if(bar%4===3&&i===6)mnote(FMELV[s]*2,.16,.07,'square',t0);         // эхо
+  if(i===0||i===3)mkick(t0,.52);                                     // тяжёлый удар
+  if(i===4)mnoise(t0,.13,.14,1800);                                  // заполняющий шум
+  if(i&1)mnoise(t0,.04,.06,8000);
+  if(i===6)mnoise(t0,.09,.08,3600);
+  if(bar===7&&i>=5)mnoise(t0,.06,.09,4200)}                        // нарастание к разрешению
+function musStep(s,t0){if(mus.fin){musStepFin(s,t0);return}const D=mus.danger,bar=s>>3,i=s&7,c=PROG[bar],ch=CHORDS[c],rt=ROOTS[c],arp=[0,1,2,1,0,2,1,2];
+  if(i===0||i===4)mnote(rt,D?.24:.17,.3,'sawtooth',t0);           // бас
+  if(i%2===0)mnote(ch[arp[i]],.12,D?.13:.09,'square',t0);           // арпеджио восьмыми — движение есть, а не бубнение одной нотой
+  const m=MELV[s];if(m)mnote(m*(D?2:1),.18,D?.12:.08,'square',t0);  // мелодия
+  if(i===0)mnote(ch[0]*2,.55,D?.07:.05,'triangle',t0);              // подушка на тонике аккорда
+  if(bar%4===3&&i===6)mnote(MELV[s]*2,.14,.05,'square',t0);         // эхо на последнем такте раунда
+  if(i===0||i===3)mkick(t0,D?.5:.34);
+  if(i===4)mnoise(t0,.11,D?.15:.1,1500);
+  if(i&1)mnoise(t0,.03,D?.07:.04,7000);
+  if(D&&i===6)mnoise(t0,.08,.05,3200);
+  if(bar===7&&i>=5)mnoise(t0,.05,.06,4000)}                        // фил в конце раунда
 function musTick(){if(!AC)return;const spb=60/112/4; // 112 BPM, шестнадцатые
- while(mus.next<AC.currentTime+.15){mus.danger=dangerNow()?1:0;musStep(mus.step,mus.next);mus.step=mus.step+1&63;mus.next+=spb}
- if(mus.next<AC.currentTime)mus.next=AC.currentTime}
+  // активация финала только на экране победы над босс-уровнем: L.bs есть только у уровня с боссом
+  mus.fin=(typeof state!=='undefined'&&typeof L!=='undefined'&&state=='win'&&L&&L.bs)?1:0 // экран победы над боссом: L.bs есть только у такого уровня
+  while(mus.next<AC.currentTime+.15){mus.danger=dangerNow()?1:0;musStep(mus.step,mus.next);mus.step=mus.step+1&63;mus.next+=spb}
+  if(mus.next<AC.currentTime)mus.next=AC.currentTime}
 addEventListener('pointerdown',()=>{audio();if(AC&&AC.state=='suspended')AC.resume()});
 document.getElementById('муз').onclick=()=>{audio();musBtn()}; // кнопка отключения музыки

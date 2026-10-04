@@ -28,9 +28,35 @@ function hop(e,v){ // есть ли куда приземлиться после
  const r=Math.abs(e.sx)*v/.3, // .3: полёт вдвое длиннее разгона при гравитации .6
   a=e.hx0==null?0:e.hx0,b=e.hx1==null?W-e.w:e.hx1; // у босса своего патруля нет — границы мира
  return gnd(Math.max(a,Math.min(b,e.x+e.d*r)),e.y+e.h)<1e9}
+const CPAL=['#ffd54a','#5ce1e6','#ff5c8a','#b993e8','#ffffff']; // праздничная палитра: только цвета, уже живущие в игре (монета, щит, хейтер, пыль) — своих не заводим
+function burst(x,y,c){ // веер искр из ракеты: круговой с разбросом, иначе залп читается как расчёт по формуле
+ for(let i=0;i<30;i++){const a=i/30*6.2832+Math.random()*.3,s=1.6+Math.random()*3.6;
+  conf.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,v:s,r:0,l:44+Math.random()*34,k:2,c})}}
+function fest(){ // салют финала. Всё в координатах экрана (800x450), не мира: на экране победы камера не едет, а конфетти должны быть прибиты к краям кадра
+ if(!celeb)return;
+ let n=0;for(const q of conf)if(!q.k)n++; // конфетти считаем отдельно от искр, иначе салют на пару кадров выедал бы фонтан
+ for(let i=0;i<86-n;i++){const e=i&3,
+   q={x:0,y:0,vx:0,vy:0,v:0,r:Math.random()*6.28,l:130+Math.random()*150,k:0,c:CPAL[Math.random()*CPAL.length|0]};
+  if(e==0){q.x=-4;q.y=Math.random()*450;q.vx=1.8+Math.random()*2.6;q.vy=(Math.random()-.5)*2} // с левого края — вправо
+  else if(e==1){q.x=804;q.y=Math.random()*450;q.vx=-1.8-Math.random()*2.6;q.vy=(Math.random()-.5)*2} // с правого края — влево
+  else if(e==2){q.y=-4;q.x=Math.random()*800;q.vy=1.8+Math.random()*2.6;q.vx=(Math.random()-.5)*2} // сверху — падает
+  else{q.y=454;q.x=Math.random()*800;q.vy=-1.8-Math.random()*2.6;q.vx=(Math.random()-.5)*2} // снизу — вверх, как с потолона бросают
+  q.v=q.vx;conf.push(q)} // v — собственная скорость по x: рыскание потом подмешивается к ней, а не накапливается кадрами
+ if(--confT<=0){confT=70+Math.random()*90; // ракета вылетает снизу: с боков салют не читается, из-за края кадра
+  conf.push({x:90+Math.random()*620,y:452,vx:(Math.random()-.5)*.6,vy:-9-Math.random()*1.6,v:9,r:0,l:70,k:1,c:CPAL[Math.random()*CPAL.length|0]})}
+ for(let i=conf.length-1;i>=0;i--){const q=conf[i]; // с конца массива: ракета исчезает по своему индексу, а её хвост добавляется в конец
+  if(q.k==1){q.vy+=.13;q.x+=q.vx;q.y+=q.vy;q.l--; // тяга гаснет, ракета садится на пике
+   if(q.vy>=-1||q.l<=0){burst(q.x,q.y,q.c);conf.splice(i,1);continue}
+   conf.push({x:q.x,y:q.y,vx:(Math.random()-.5)*.8,vy:.3+Math.random()*.6,v:0,r:0,l:20,k:2,c:'#ffd54a'});continue} // хвост: искры гаснут за 20 кадров
+  if(q.k){q.vx*=.985;q.vy=q.vy*.985+.16} // искра: сопротивление воздуха, без него падает струной и не оседает
+  else{q.vy+=.05;q.vx=q.v+Math.sin(t*.07+q.y*.06+q.x*.013)*1.9} // конфети: гравитация плюс рыскание — пластинка колышется, а не летит по дуге
+  q.x+=q.vx;q.y+=q.vy;q.r+=.16;q.l--}
+ conf=conf.filter(q=>q.l>0 && q.x>=-12 && q.x<=812 && q.y>=-12 && q.y<=462);
+}
 function update(){
  t++;
-if(state!='play'){if(P){P.inv=Math.max(0,P.inv-1);shieldT=Math.max(0,shieldT-1)} // иначе мигание неуязвимости и щит замерзают на экране поражения
+ if(state!='play'){if(P){P.inv=Math.max(0,P.inv-1);shieldT=Math.max(0,shieldT-1)} // иначе мигание неуязвимости и щит замерзают на экране поражения
+  fest(); // салют живёт и на экране победы: конфетти обязаны лететь, пока игрок читает поздравление
   if(tap.Enter){tap.Enter=0;keys.Enter=0;if(state=='lose')reset(li);else toMap()} // поражение — тот же уровень заново, победа — карта
   volHide();return}
  if(hint>0)hint--;
@@ -138,7 +164,9 @@ if(hb&&hit(hb,{x:s.x-30,y:s.y-11,w:60,h:22})){ // слипшиеся фразы 
  shd.forEach(q=>{q.vy+=.24;q.x+=q.vx;q.y+=q.vy;q.r+=.1;q.l--});shd=shd.filter(q=>q.l>0);
  shake*=.8;
 if(Math.abs(P.x+12-L.fin[0])<45&&Math.abs(P.y+P.h-L.fin[1])<80&&(!L.fin[2]||finOpen)){state='win';snd('win');if(score>(best[li]||0))best[li]=score;if(done.indexOf(li)<0)done.push(li);bank+=score;save()} // выигрыш уходит в банк
-  cam+=(Math.max(0,Math.min(W-800,P.x-300))-cam)*.16; // камера догоняет плавно, без рывков на краях
+ if(L.bs&&!celeb){conf=[];confT=40;celeb=1} // салют только там, где есть босс: bs есть ровно у «Директора», поэтому проверка на свойство, а не на номер уровня — перестановка уровней финал не сломает. !celeb обязателен: строка выше срабатывает каждый кадр, пока Валя стоит в воротах
+ // shake здесь намеренно не трогаем: он гасится (shake*=.8) только в ветке play, и на экране победы кадр дрожал бы вечно
+   cam+=(Math.max(0,Math.min(W-800,P.x-300))-cam)*.16; // камера догоняет плавно, без рывков на краях
   camY+=(Math.max(0,Math.min(LH-450,P.y-260))-camY)*.16;
 }
 function rr(x,y,w,h,r,c){g.fillStyle=c;g.beginPath();g.roundRect(x,y,w,h,r);g.fill()}
