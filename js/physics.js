@@ -163,8 +163,7 @@ if(hb&&hit(hb,{x:s.x-30,y:s.y-11,w:60,h:22})){ // слипшиеся фразы 
  pops.forEach(p=>{p.y-=.8;p.l--});pops=pops.filter(p=>p.l>0);
  shd.forEach(q=>{q.vy+=.24;q.x+=q.vx;q.y+=q.vy;q.r+=.1;q.l--});shd=shd.filter(q=>q.l>0);
  shake*=.8;
-if(Math.abs(P.x+12-L.fin[0])<45&&Math.abs(P.y+P.h-L.fin[1])<80&&(!L.fin[2]||finOpen)){state='win';snd('win');if(score>(best[li]||0))best[li]=score;if(done.indexOf(li)<0)done.push(li);bank+=score;save()} // выигрыш уходит в банк
- if(L.bs&&!celeb){conf=[];confT=40;celeb=1} // салют только там, где есть босс: bs есть ровно у «Директора», поэтому проверка на свойство, а не на номер уровня — перестановка уровней финал не сломает. !celeb обязателен: строка выше срабатывает каждый кадр, пока Валя стоит в воротах
+if(Math.abs(P.x+12-L.fin[0])<45&&Math.abs(P.y+P.h-L.fin[1])<80&&(!L.fin[2]||finOpen)){state='win';snd('win');if(score>(best[li]||0))best[li]=score;if(done.indexOf(li)<0)done.push(li);bank+=score;save();if(L.bs){conf=[];confT=40;celeb=1}} // выигрыш уходит в банк
  // shake здесь намеренно не трогаем: он гасится (shake*=.8) только в ветке play, и на экране победы кадр дрожал бы вечно
    cam+=(Math.max(0,Math.min(W-800,P.x-300))-cam)*.16; // камера догоняет плавно, без рывков на краях
   camY+=(Math.max(0,Math.min(LH-450,P.y-260))-camY)*.16;
