@@ -1,7 +1,7 @@
 const cv=document.getElementById('c'),g=cv.getContext('2d');
 let P,coins,foes,state='map',cam,camY,score,t=0,pops,shots,shd,hint=0,taught=0,boss=null,finOpen=0;
 let L=LV[0],W=L.w,li=0,shake=0,done=[],best=[],bank=0,lost=0,AG=1;
-const SHPRICE=100,SHMAX=3,RUNV=.6,SWING=24;
+const SHPRICE=100,SHMAX=3,LIFEPRICE=1000,RUNV=.6,SWING=24;
 let shield=0,shieldT=0;
 let swA=1.3,rnS=0,lndS=0;
 try{
@@ -26,6 +26,7 @@ addEventListener('keydown',e=>{
  if(e.code=='KeyM'&&!e.repeat)MUTE=!MUTE;
  if(e.code=='KeyN'&&!e.repeat)e.shiftKey?volStep():musBtn();
  if(e.code=='KeyF'&&!e.repeat){goFs(!document.fullscreenElement);fsb.blur();e.preventDefault()}
+ if(e.code=='KeyX'&&!e.repeat){buyLife();e.preventDefault()}
  if(e.code=='Escape')toMap();audio();if(e.code=='Space'||e.code.startsWith('Arrow'))e.preventDefault()});
 addEventListener('keyup',e=>{keys[e.code]=0;
  if((e.code=='Space'||e.code=='ArrowUp'||e.code=='KeyW')&&P&&P.vy<-6)P.vy*=.5}); // отпустил прыжок раньше — подрезал высоту, как в платформерах
@@ -87,13 +88,14 @@ foes.forEach(e=>{if(!e.dead)hater(e)});
   g.globalAlpha=p.l/50;g.fillStyle=p.c;g.font='bold 15px system-ui';g.textAlign='center';g.fillText(p.s,p.x,p.y);g.globalAlpha=1});
  g.restore();
  g.fillStyle='#fff';g.font='bold 18px system-ui';g.textAlign='left';
- g.fillText('❤'.repeat(Math.max(P.hp,0)),16,28);
+ g.fillText('❤'.repeat(Math.max(P.hp,0)),16,64);
+ if(bank>=LIFEPRICE){g.fillStyle='#5ce1e6';g.font='bold 15px system-ui';g.fillText('ЖИЗНЬ ЗА 1000₽ — ЖМИ X',16,86);lifeUi()}
  g.textAlign='right';g.fillStyle='#ffd54a';g.fillText('Донаты: '+score+' ₽',784,28);
   g.font='bold 14px system-ui';g.fillStyle=AG>1.3?'#ff5c8a':'#c39bd3';g.fillText('Банк '+bank+' ₽ → хейтеры ×'+AG.toFixed(2),784,48);
   g.fillStyle=shield?'#5ce1e6':'#8a7fa8';g.fillText(shield?'Щит ×'+shield+' — C':'Щит '+SHPRICE+' ₽/3 — C',784,68);
- if(hint>0){g.globalAlpha=Math.min(1,hint/50);g.fillStyle='#000c';g.fillRect(0,84,800,46);
-  g.fillStyle='#ff5c8a';g.font='bold 21px system-ui';g.textAlign='center';g.fillText('ХЕЙТЕРЫ ЗЛЕЮТ С КАЖДОЙ МОНЕТОЙ',400,113);
-  g.fillStyle='#ffd54a';g.font='bold 15px system-ui';g.fillText(' смерть сожжёт половину банка — богатым быть опаснее',400,133);g.globalAlpha=1}
+ if(hint>0){g.globalAlpha=Math.min(1,hint/50);g.fillStyle='#000c';g.fillRect(0,112,800,46);
+  g.fillStyle='#ff5c8a';g.font='bold 21px system-ui';g.textAlign='center';g.fillText('ХЕЙТЕРЫ ЗЛЕЮТ С КАЖДОЙ МОНЕТОЙ',400,141);
+  g.fillStyle='#ffd54a';g.font='bold 15px system-ui';g.fillText(' смерть сожжёт половину банка — богатым быть опаснее',400,161);g.globalAlpha=1}
  if(state=='win'||state=='lose'){
   g.fillStyle='#000a';g.fillRect(0,0,800,450);g.fillStyle='#fff';g.textAlign='center';
   g.font='bold 34px system-ui';g.fillText(state=='win'?L.n+' — стрим окончен!':'Хейтеры победили',400,200);
@@ -107,6 +109,19 @@ function fss(){const on=!!document.fullscreenElement;fsb.textContent=on?'⤡':'�
 function goFs(on,keep){wantFs=on||keep?1:0;try{const r=on?wrap.requestFullscreen():document.exitFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 fsb.onclick=()=>{goFs(!document.fullscreenElement);fsb.blur()}; // blur обязателен: иначе Enter/Пробел снова «нажмут» кнопку и выбьют из фулскрина
 addEventListener('fullscreenchange',fss);fss();
+
+const lifeBt=document.getElementById('жизнь'),guideLife=document.getElementById('гайд-жизнь');
+function lifeUi(){const can=bank>=LIFEPRICE;lifeBt.classList.toggle('ok',can);guideLife.classList.toggle('ok',can);lifeBt.disabled=!can}
+function buyLife(){
+ if(bank<LIFEPRICE)return false;
+ bank-=LIFEPRICE;extras++;
+ if(P){P.hp++;pops.push({x:P.x+12,y:P.y-26,s:'жизнь +1',st:1,c:'#5ce1e6',rot:0,l:44})} // уже в игре — сердце сразу в руках
+ save();lifeUi();snd('coin');return true
+}
+// reset() в game.js жёстко ставит hp:3, поэтому купленные сердца добавляем поверх — иначе покупка сбрасывалась бы на каждом уровне
+const _reset=reset;reset=function(i){_reset(i);P.hp=3+extras;lifeUi()};
+lifeBt.onclick=()=>{buyLife();lifeBt.blur()};
+lifeUi();
 toMap();
 const ST=1000/60;let acc=0,lp=performance.now(); // физика фиксированным шагом 60Гц, картинка — на частоте экрана
 (function loop(n){requestAnimationFrame(loop);acc+=Math.min(n-lp,250);lp=n; // 250мс потолок: после возврата на вкладку не догоняем секунды

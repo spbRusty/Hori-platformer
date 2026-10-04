@@ -2,6 +2,11 @@ const mapEl=document.getElementById('map');
 const pathEl=document.getElementById('path');
 const statEl=document.getElementById('статы');
 const diffEl=document.getElementById('слож');
+const recEl=document.getElementById('рекордсписок');
+const nickEl=document.getElementById('ник');
+const nickIn=document.getElementById('никполе');
+const nickOk=document.getElementById('никок');
+const nickIt=document.getElementById('никит');
 
 function toMap(){
  state='map';
@@ -11,6 +16,8 @@ function toMap(){
  pathEl.textContent='';
  statEl.innerHTML='<span>пройдено '+done.length+'/'+LV.length+'</span><span>банк '+bank+' ₽</span><span>щит ×'+shield+'</span><span>рекорд '+Math.max(0,...best)+' ₽</span>';
   renderDiff();
+  renderNick();
+  renderRecords();
  const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');
  sv.setAttribute('viewBox','0 0 100 100');
  sv.setAttribute('preserveAspectRatio','none');
@@ -23,19 +30,19 @@ function toMap(){
  });
  pathEl.append(sv);
  mapBtns=[];
- LV.forEach((lv,i)=>{
-  const b=document.createElement('button'),un=unl(i);
-  b.disabled=!un;
-  b.style.left=NOD[i][0]+'%';
-  b.style.top=NOD[i][1]+'%';
-  b.innerHTML='<span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':'');
-  if(un){
-   b.onclick=()=>reset(i);
-   b.onmouseenter=()=>{mapSelI=mapBtns.findIndex(x=>x[0]==i);mapSel(0)};
-   mapBtns.push([i,b]);
+  LV.forEach((lv,i)=>{
+   const b=document.createElement('button'),un=unl(i);
+   b.disabled=!un;
+   b.style.left=NOD[i][0]+'%';
+   b.style.top=NOD[i][1]+'%';
+   b.innerHTML='<b class="этап">'+(i+1)+'</b><span>'+lv.n+'</span><i>'+(best[i]?best[i]+' ₽':'—')+'</i>'+(done.indexOf(i)>=0?'<u>✓</u>':(un?'':'<u class="lock">🔒</u>'));
+   if(un){
+    b.onclick=()=>reset(i);
+    b.onmouseenter=()=>{mapSelI=mapBtns.findIndex(x=>x[0]==i);mapSel(0)};
+    mapBtns.push([i,b]);
+   }
    pathEl.append(b);
-  }
- });
+  });
  const k=mapBtns.findIndex(x=>x[0]==li);
  mapSelI=k<0?0:k;
  mapSel(0);
@@ -57,3 +64,30 @@ function renderDiff(){
   diffEl.append(b)});
  const s=document.createElement('span');s.textContent=DF.ds;diffEl.append(s);
 }
+
+function totalScore(){return best.reduce((a,b)=>a+(+b||0),0)} // сумма лучших результатов по уровням — это и есть число в таблице
+function renderRecords(){
+ recEl.textContent='';
+ if(!records.length){
+  const e=document.createElement('div');e.className='пусто';e.textContent='пока пусто — пройди 3 уровня и впиши свой ник';recEl.append(e);return}
+ records.forEach((r,k)=>{
+  const li=document.createElement('li');if(r.n===nick)li.className='me';
+  const i=document.createElement('i');i.textContent=k+1;
+  const b=document.createElement('b');b.textContent=r.n;
+  const s=document.createElement('s');s.textContent=r.s+' ₽';
+  li.append(i,b,s);recEl.append(li)});
+}
+function renderNick(){
+ nickEl.style.display=done.length>=3?'flex':'none';
+ if(done.length<3)return;
+ const at=records.findIndex(r=>r.n.toLowerCase()==nick.toLowerCase());
+ if(at>=0){nickIt.textContent='ты в таблице: '+records[at].n+', место '+(at+1)+' из '+records.length;return}
+ nickIt.textContent='в таблицу попадёт '+totalScore()+' ₽ — сумма лучших результатов';
+ nickIn.value=nick;
+}
+nickOk.onclick=()=>{
+ const v=nickIn.value.trim();
+ if(!v){nickIt.textContent='впиши ник — пустую строку не берём';return}
+ if(!addRecord(v,totalScore())){nickIt.textContent='не удалось записать результат';return}
+ nick=v;asked=1;save();nickIn.value=v;renderRecords();renderNick()};
+nickIn.addEventListener('keydown',e=>{if(e.key=='Enter'){e.preventDefault();nickOk.click()}});

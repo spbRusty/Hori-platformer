@@ -4,18 +4,32 @@
 <title>Валя против хейтеров</title>
 <link rel="stylesheet" href="style.css"></head><body>
 <div id="игр"><canvas id="c" width="800" height="450"></canvas>
-  <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span></div>
+  <div id="гайд"><span><b>←→</b>ходить</span><span><b>Пробел ×2</b>двойной прыжок</span><span><b>C</b>щит 100₽</span><span><b>F</b>полный экран</span><span><b>N</b>музыка</span><span><b>⇧N</b>громкость</span><span><b>M</b>звук</span><span><b>Esc</b>карта</span><span><b>👑</b>босс ждёт в финале</span><span id="гайд-жизнь"><b>X</b>жизнь 1000₽</span></div>
   <div id="гром"><i></i><i></i><i></i><i></i><s>−</s><s>+</s></div>
+  <div id="левые"><button id="жизнь" aria-label="Купить жизнь за 1000 рублей"><b>❤</b><s>1000₽</s></button></div>
   <div id="кнопки"><button id="муз" aria-label="Музыка">♪</button><button id="fs" aria-label="Полный экран">⛶</button></div>
 </div>
 <div id="pad"><div><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button></div><div><button data-k="KeyC">🛡</button><button data-k="Space">⤒</button></div></div>
 
 <div id="map">
-  <h1>ВАЛЯ ПРОТИВ ХЕЙТЕРОВ</h1>
-  <p>Выбери уровень</p>
+  <header id="шапка">
+    <h1>ВАЛЯ ПРОТИВ ХЕЙТЕРОВ</h1>
+    <p>Собирай донаты · обходи хейтеров · вынеси директора</p>
+  </header>
   <div id="статы"></div>
   <div id="слож"></div>
-  <div id="path"></div>
+  <div id="ник"><label for="никполе">Пройдено 3 уровня — впиши свой ник в таблицу рекордов</label>
+    <div id="никряд"><input id="никполе" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="ник"><button id="никок">в таблицу</button></div>
+    <span id="никит"></span>
+  </div>
+  <div id="середка">
+    <div id="путь"><div id="path"></div><p id="подсказка">Выбирай этап: стрелки — переключение, Enter — старт</p></div>
+    <aside id="рекорды"><h2>Таблица рекордов</h2><ol id="рекордсписок"></ol></aside>
+  </div>
+  <div id="донаты">
+    <a href="https://www.donationalerts.com/r/horikouma" target="_blank" rel="noopener noreferrer">донатьте Вале</a>
+    <a href="https://new.donatepay.ru/donate/1465647" target="_blank" rel="noopener noreferrer">донатьте мне</a>
+  </div>
 </div>
 
 <script src="js/audio.js"></script>

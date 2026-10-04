@@ -1,4 +1,8 @@
 function hater(e){
+  if(e.ed>0){const gy=e.y0+e.h,gx=e.x+15,k=1-(e.y0-e.y)/EDROP,pu=Math.sin(t*.25); // телеграф входа: тень и кольцо на своей площадке плюс метка сверху. Пока хейтер летит, игрок видит, откуда он придёт, — иначе он просто возникает в кадре
+   g.save();g.globalAlpha=.18+.4*k;g.fillStyle='#000';g.beginPath();g.ellipse(gx,gy,9+15*(1-k),3.5+5*(1-k),0,0,7);g.fill(); // тень на земле: широкая и бледная в высоте, собирается и густеет к точке приземления
+   g.globalAlpha=.3+.45*k;g.strokeStyle='#ff5c8a';g.lineWidth=2;g.beginPath();g.ellipse(gx,gy,14+4*pu,5+2*pu,0,0,7);g.stroke();
+   g.globalAlpha=.85;g.fillStyle='#ffd54a';g.beginPath();g.moveTo(gx,gy-32+6*k);g.lineTo(gx+8,gy-43+6*k);g.lineTo(gx-8,gy-43+6*k);g.closePath();g.fill();g.restore()}
   if(e.k===5)return haterBoss(e); // 👑 Директор рисуется сам, в обход общей фигурки хейтера
   const k=e.k,c=['#ff5f4d','#ffa62b','#b98cff','#25e3c4'][k],lc=['#5ce1e6','#ffd54a','#c39bd3','#ff5c8a'][k]; // сочные тона: тёмный финал больше не съедает силуэт
   g.save();g.translate(e.x,e.y);

@@ -5,11 +5,29 @@ function solid(o,py){ // one-way landing; + блоки уровня: на них
    for(const b of L.s||[])land(o,py,b);
   }
 function blockX(o){ // стены уровня непроходимы по X: выталкиваем к ближайшей грани
- for(const b of L.s||[]){
-  if(o.y+o.h>b[1]+3&&o.y<b[1]+b[3]&&o.x+o.w>b[0]&&o.x<b[0]+b[2])
-   o.x=o.x+o.w/2<b[0]+b[2]/2?b[0]-o.w:b[0]+b[2];
+  for(const b of L.s||[]){
+   if(o.y+o.h>b[1]+3&&o.y<b[1]+b[3]&&o.x+o.w>b[0]&&o.x<b[0]+b[2])
+    o.x=o.x+o.w/2<b[0]+b[2]/2?b[0]-o.w:b[0]+b[2];
+  }
  }
-}
+function gnd(x,ft){ // верх твёрдой поверхности под мировой x, на которую тело 30×34 упало бы со ступней ft; 1e9 — пусто.
+ // падаем тем же шагом и тем же solid(), что и хейтер, так что правило совпадает, а не «похоже на» land()
+ const o={x:x-15,y:ft-34,w:30,h:34,vy:0,lnd:0,j:0};
+ while(!o.on&&o.y<LH+60){o.vy+=.6;o.y+=o.vy;solid(o,o.y-o.vy)}
+ return o.on?o.y+o.h:1e9} // +o.h: возвращаем верх площадки, а не покой тела — по нему ищется площадка в patrol()
+function patrol(e){ // настоящие границы патруля: [x0,x1] сужаем до площадки под y0 — в уровнях патруль шире площадки до 32px
+ if(e.hx0!=null)return; // геометрия статична: считаем один раз, а не каждый кадр на всех мобов
+ let a=e.x0,b=e.x1;
+ if(!(b>a))a=b=(a+b)/2; // пустой или перевёрнутый патруль схлопываем в точку, чтобы не стало NaN
+ const f=gnd(e.x+15,e.y0+e.h); // поверхность берём тем же gnd(), что и гейт прыжка, а не своим поиском
+ if(f<1e9)for(const q of L.p.concat(L.s||[]))if(q[1]==f&&q[0]<e.x+e.w&&q[0]+q[2]>e.x){ // -15: центр над полом, а не над пропастью
+  const l=Math.max(a,q[0]-15),r=Math.min(b,q[0]+q[2]-15);if(r>=l){a=l;b=r}
+  break}
+ e.hx0=a;e.hx1=b}
+function hop(e,v){ // есть ли куда приземлиться после прыжка на v — иначе хейтер улетал с площадки в яму
+ const r=Math.abs(e.sx)*v/.3, // .3: полёт вдвое длиннее разгона при гравитации .6
+  a=e.hx0==null?0:e.hx0,b=e.hx1==null?W-e.w:e.hx1; // у босса своего патруля нет — границы мира
+ return gnd(Math.max(a,Math.min(b,e.x+e.d*r)),e.y+e.h)<1e9}
 function update(){
  t++;
 if(state!='play'){if(P){P.inv=Math.max(0,P.inv-1);shieldT=Math.max(0,shieldT-1)} // иначе мигание неуязвимости и щит замерзают на экране поражения
@@ -37,6 +55,10 @@ if(state!='play'){if(P){P.inv=Math.max(0,P.inv-1);shieldT=Math.max(0,shieldT-1)}
 const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
   for(const e of foes){
    if(e.dead)continue;
+   if(e.ed>0){ // вход хейтера: падает с верхнего края кадра на своё место патруля (y0) и пока не приземлился —
+    e.vy=Math.min(13,e.vy+1.3);e.y+=e.vy; // он ещё не в игре: не ходит, не стреляет и не ранит Валю, иначе хейтер возникал бы прямо над ней
+    if(e.y>=e.y0){e.y=e.y0;e.vy=0;e.on=1;e.ed=0}
+    continue}
    if(e.k===5){ // 👑 Директор: уклоняется от меча, бьёт залпом, прыгает с ударом — фазы лезут в ту же фигурку
     const bcx=e.x+e.w/2;
     if(e===boss){
@@ -44,7 +66,7 @@ const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
       if(!e.hi&&ad<540){e.hi=1;pop(bcx,e.y-40,'БЕЙ ПО РОГАМ!','#ff2d55');shake=7}
       if(e.dg>0)e.dg--;if(e.ch>0)e.ch--;if(e.ht>0)e.ht--;
      if(e.dg){e.sx+=((pv?3.4:2.2)*AG*DF.vx-e.sx)*.16} // отскок от меча — резкий, с коротким разгоном
-      else if(e.on&&e.sp<=0&&ad<170){e.d=P.x+12>bcx?1:-1;e.vy=-14;e.on=0;e.sp=pv?58:74;e.lnd1=0;shake=5} // подскочил и рухнул сверху
+      else if(e.on&&e.sp<=0&&ad<170&&hop(e,14)){e.d=P.x+12>bcx?1:-1;e.vy=-14;e.on=0;e.sp=pv?58:74;e.lnd1=0;shake=5} // подскочил и рухнул сверху — но только если есть куда приземлиться
      else if(P.x+12>e.x+e.w+28||P.x+12<e.x-28)e.ch=pv?78:64; // герой за спиной — догоняет и расталкивает залпом
      else{e.ch=0}
      if(!e.ch&&!e.dg){const nd=e.x<e.x0?1:e.x>e.x1?-1:0;
@@ -71,7 +93,7 @@ const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
     if(P.inv<=0&&hit(P,e)){P.x-=Math.sign(P.x+12-bcx||1)*36;hurt();pops.push({x:P.x+12,y:P.y-12,s:'не лезь к боссу!',st:1,c:'#5ce1e6',rot:(Math.random()-.5)*.4,l:44})}
     continue}
    const ex=e.x+15,px=P.x+12,ad=Math.abs(px-ex),ahead=P.f>0?ex>px:ex<px; // враг перед героем или за спиной
-  if(ahead&&ad<160&&(P.atk>0||P.vx)){if(!e.dg){e.d=P.f>0?-1:1;if(e.on){e.vy=-12.5;e.on=0}}e.dg=36} // бежит на него с мечом — хейтер отскакивает прыжком
+  if(ahead&&ad<160&&(P.atk>0||P.vx)){if(!e.dg){e.d=P.f>0?-1:1;if(e.on&&hop(e,12.5)){e.vy=-12.5;e.on=0}}e.dg=36} // бежит на него с мечом — хейтер отскакивает прыжком, а прыгать некуда — просто отходит
   else if(!ahead&&ad<330)e.ch=64; // герой спиной — догоняет
   if(e.dg>0)e.dg--;if(e.ch>0)e.ch--;
   const tv=e.vx*(e.dg>0?2.4:e.ch>0?1.6:1);
@@ -82,12 +104,12 @@ const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
    else e.sx+=(tv-e.sx)*.12}
   else{e.pd=0;e.sx+=(tv-e.sx)*.12}
   e.x+=e.sx*e.d; // хейтер разгоняется и разворачивается через гашение, а не стартует рывком
-  e.x=Math.max(0,Math.min(W-e.w,e.x));
    const epy=e.y;e.vy+=.6;e.y+=e.vy;solid(e,epy); // swept-приземление как у игрока: на скорости падения хейтер больше не проваливается сквозь платформу
-   if(e.y>LH+40){e.y=e.y0;e.vy=0;e.on=1} // страховка от падения — только за нижним краем мира, телепорт не виден на экране
-   blockX(e);
-  if(e.on&&e.k>1&&Math.random()<(e.k>2?.03:.012)&&ad<240){e.vy=e.k>2?-13:-11.5;e.on=0} // с ростом уровня хейтеры прыгают сами
-  if(e.on&&e.ch>0&&ad<130&&Math.random()<.04){e.vy=-11;e.on=0} // погоня — подпрыгивает на пятках
+   blockX(e);patrol(e);
+  e.x=Math.max(e.hx0,Math.min(e.hx1,e.x)); // патруль вместо мира: за свою площадку хейтер не уходит — иначе уходил в пропасть
+   if(e.y>LH+40||(!e.on&&e.vy>0&&e.y>e.y0&&gnd(e.x+15,e.y+e.h)>e.y+e.h)){e.y=e.y0;e.vy=0;e.on=1} // страховка от падения: ловим, как только под ногами пусто, а не только за нижним краем мира
+  if(e.on&&e.k>1&&Math.random()<(e.k>2?.03:.012)&&ad<240&&hop(e,13)){e.vy=e.k>2?-13:-11.5;e.on=0} // с ростом уровня хейтеры прыгают сами
+  if(e.on&&e.ch>0&&ad<130&&Math.random()<.04&&hop(e,11)){e.vy=-11;e.on=0} // погоня — подпрыгивает на пятках
    if(e.k&&t>e.sr&&ad<430&&Math.abs(P.y-e.y)<170){ // залп фразами
     e.sr=t+(e.k>2?70:120)/(AG*DF.fq)+Math.random()*40|0;const a=Math.atan2(P.y+22-e.y-6,P.x+12-e.x),n=e.k>2?5:e.k>1?3:1;
      const ph=pick(n);for(let i=0;i<n;i++)shoot(e,a+(i-(n-1)/2)*.16,ph[i]);snd('swing')}
@@ -106,7 +128,12 @@ if(hb&&hit(hb,{x:s.x-30,y:s.y-11,w:60,h:22})){ // слипшиеся фразы 
    else if(shieldT>0&&Math.abs(s.x-P.x-12)<36&&Math.abs(s.y-P.y-22)<22){s.l=0;pops.push({x:s.x,y:s.y,s:'съедено щитом',st:1,c:'#5ce1e6',rot:0,l:40})} // щит не отбивает, а съедает фразу
    else if(P.inv<=0&&Math.abs(s.x-P.x-12)<36&&Math.abs(s.y-P.y-22)<22){s.l=0;P.x-=Math.sign(s.vx)*20;hurt();pops.push({x:s.x,y:s.y,s:s.s,st:1,c:'#ff5c8a',rot:(Math.random()-.5)*.3,l:40})}}
  shots=shots.filter(s=>s.l>0);
- for(const c of coins){if(!c.g&&Math.abs(c.x-(P.x+12))<22&&Math.abs(c.y-(P.y+22))<32){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a');snd('coin')}}
+ // монета — круг радиуса 10, игрок — прямоугольник 24x44. Раньше стоял бокс 22x32 вокруг центра игрока:
+ // он был шире монеты по y, но уже по x, так что Валя мог заделать монету боком и не получить ничего.
+ // Теперь берём настоящее пересечение круга с хитбоксом — платим за любое касание того, что нарисовано.
+  for(const c of coins){if(c.g)continue;
+   const cy=c.y+Math.sin(t*.08+c.x)*3,dx=c.x-Math.max(P.x,Math.min(c.x,P.x+P.w)),dy=cy-Math.max(P.y,Math.min(cy,P.y+P.h)); // та же ±3 ряби, что в draw, иначе мигающая монета считалась по невидимой координате
+   if(dx*dx+dy*dy<=100){c.g=1;score+=c.v;pop(c.x,c.y,'+'+c.v+'₽','#ffd54a');snd('coin')}}
  pops.forEach(p=>{p.y-=.8;p.l--});pops=pops.filter(p=>p.l>0);
  shd.forEach(q=>{q.vy+=.24;q.x+=q.vx;q.y+=q.vy;q.r+=.1;q.l--});shd=shd.filter(q=>q.l>0);
  shake*=.8;
@@ -120,17 +147,31 @@ const CTW=1600,CTH=620,CBY=560;
 let city=[];
 function nrand(seed){let s=(seed>>>0)||1;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296)}
 function buildCity(){
- const K=TH[li]||'tower',sk=L.sky[0];
+ const K=TH[li]||'tower',sk=L.sky[0],mk=()=>{const c=document.createElement('canvas');c.width=CTW;c.height=CTH;return c},
+   A=mk(),B=mk(),ra=A.getContext('2d'),rb=B.getContext('2d'); // два служебных полотна: сам мотив и его светлая копия под кромку
  city=[.05,.11,.2].map((f,k)=>{ // параллакс замедлен втрое: на .12/.28/.5 задник уезжал быстрее героя и путал, где он, а где стена
-   const c=document.createElement('canvas');c.width=CTW;c.height=CTH;const x=c.getContext('2d'),R=nrand(li*7919+k*131+17);
-  const tone=[shade(sk,.5),shade(sk,.34),shade(sk,.2)][k],lit=L.sky[1],glow=shade(lit,.92);
-  motif(x,R,K,tone,lit,glow,k);
+    const c=document.createElement('canvas');c.width=CTW;c.height=CTH;const x=c.getContext('2d'),R=nrand(li*7919+k*131+17);
+// тон слоя — не shade(sk,.5/.34/.2), а backdrop(): тёмное небо, умноженное на долю, всегда давало почти чёрный
+   // силуэт, в котором тёмный хейтер и белая Валя просто исчезали
+  const lit=L.sky[1],tone=backdrop(sk,lit,k),glow=shade(lit,.92);
+  motif(ra,R,K,tone,lit,glow,k);
+   rb.globalCompositeOperation='copy';rb.drawImage(A,0,0);rb.globalCompositeOperation='source-in';rb.fillStyle=mixc(lit,'#ffffff',.5);rb.fillRect(0,0,CTW,CTH);rb.globalCompositeOperation='source-over';
+  // кромка: та же фигура, вбитая в светлый тон и смещённая на 2px — светящийся контур держит силуэт хейтера,
+   // фразы и героя на любом из 12 задников, цвет уровня при этом остаётся его собственным
+  x.globalAlpha=.5;x.drawImage(B,-2,0);x.drawImage(B,2,0);x.drawImage(B,0,-2);x.drawImage(B,0,2);x.globalAlpha=1;x.drawImage(A,0,0);
    const g=x.createLinearGradient(0,CBY-170,0,CBY);g.addColorStop(0,'rgba(18,10,34,0)');g.addColorStop(1,shade(sk,.12)+'d0');
    x.fillStyle=g;x.fillRect(0,CBY-170,CTW,170); // дымка у основания
    return{c,f}});
-}
-// 12 своих задников вместо четырёх силуэтов по кругу. Тон всегда берётся из тёмного неба уровня,
-// а lit/glow идут только мелкими акцентами — иначе белый Валя и розовые фразы слились бы с фоном.
+ }
+// 12 своих задников вместо четырёх силуэтов по кругу. Тон — из неба уровня, но подмешанный к его светлой половине
+// (см. buildCity): тёмный силуэт съедал хейтера, а слишком светлый утопил бы белую Валю. lit/glow остаются акцентами.
+const MIX=[.36,.25,.16],CAP=[.13,.09,.055],FLR=.03; // сколько светлой половины неба подмешиваем в слой — дальний светлее — и до какой светлоты доводим
+function backdrop(sk,lit,k){ // тон слоя задника: небо, подмешанное со своей светлой половиной, с полом и потолком по светлоте.
+ // Потолок нужен, чтобы на «Спринте» и «Знаках» светлое небо не подняло задник в тот же тон, где хейтер опять не читается;
+ // пол — чтобы на «Инферно» и «Схеме» задник не оказался темнее тёмного тела босса и не съел его силуэт
+ let t=MIX[k],m=mixc(sk,lit,t),l=lumc(m);
+ if(l<FLR){t+=(1-t)*Math.min(1,(FLR-l)/FLR)*.55;m=mixc(sk,lit,t);l=lumc(m)}
+ return l>CAP[k]?shade(m,CAP[k]/l):m}
 function motif(x,R,K,tone,lit,glow,k){
  if(K=='tower'){let px=-60; // небоскрёбы
   while(px<CTW+60){const w=44+R()*96,h=110+R()*(k?300:220),y=CBY-h;
@@ -223,6 +264,12 @@ function winLights(x,R,px,y,w,lit,glow){for(let wy=y+15;wy<CBY-12;wy+=17)for(let
 function shade(hex,f){ // затемнить/осветлить свой цвет уровня на коэффициент f — один хелпер вместо палитры на 12 тем
  const n=parseInt(hex.slice(1),16),r=n>>16&255,gg=n>>8&255,b=n&255;
  return'#'+[r,gg,b].map(v=>Math.max(0,Math.min(255,Math.round(v*f))).toString(16).padStart(2,'0')).join('')}
+function mixc(a,b,t){ // смешать два цвета уровня: shade() умеет только умножать, а тёмное небо умножением не поднять выше черноты
+ const p=h=>{const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255]},A=p(a),B=p(b);
+ return'#'+A.map((v,i)=>Math.max(0,Math.min(255,Math.round(v+(B[i]-v)*t))).toString(16).padStart(2,'0')).join('')}
+function lumc(hex){ // относительная светлота 0..1 — по ней держим задник в середине, а не в черноте и не в побелке
+ const n=parseInt(hex.slice(1),16),c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4});
+ return .2126*c[0]+.7152*c[1]+.0722*c[2]}
 function skyCity(){
  const mx=650-cam*.03,my=88+Math.min(camY*.04,40),mg=g.createRadialGradient(mx,my,2,mx,my,58);
  mg.addColorStop(0,'#fff6dc');mg.addColorStop(.22,'#ffe7aeaa');mg.addColorStop(1,'#ffe7ae00');
